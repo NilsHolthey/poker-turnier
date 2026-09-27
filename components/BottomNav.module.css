@@ -1,0 +1,73 @@
+/* Kompakte, inhaltsbreite Pille statt eines breiten fast leeren Balkens -
+   seit die Blindanzeige raus ist (jetzt oben als eigene BlindPill, Chat:
+   "blines shoul live centered top now"), bleiben hier nur noch 1-2 kleine
+   Icons übrig. Zentriert unten statt links/rechts an die Kanten gespannt. */
+.nav {
+  position: fixed;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 200;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  min-height: 50px;
+  /* translateZ(0) kommt von .glassChrome - beide müssen in EINEM
+     transform-Wert stehen, siehe TournamentBoard.module.css .header. */
+  transform: translateX(-50%) translateZ(0);
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.navButton:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Subtile vertikale Trennlinie zwischen den Abschnitten (Chat-Wunsch:
+   "visually seperated from the rest eith a suddle vertical line") - jetzt
+   vor jedem optionalen Abschnitt (Dein Tisch, Benachrichtigungen), nicht nur
+   vor Benachrichtigungen. */
+.divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Admin-Phasenwechsel ("HF starten") anstelle des Dein-Tisch-Chips - kompakte
+   Akzent-Pille, damit er als die eine wichtige Aktion in der Nav heraussticht. */
+.phaseButton {
+  height: 34px;
+  padding: 0 16px;
+  margin: 0 4px;
+  border: none;
+  border-radius: 999px;
+  background: var(--gradient-accent);
+  color: #16130d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(163, 133, 96, 0.3);
+}
+
+.phaseButton:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.phaseButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}

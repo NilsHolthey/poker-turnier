@@ -1,0 +1,22 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  pointer-events: none;
+  animation: alert-pulse 1.3s ease-in-out;
+}
+
+.banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px
+    max(16px, env(safe-area-inset-left));
+  text-align: center;
+  background: var(--danger);
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  animation: banner-drop-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}

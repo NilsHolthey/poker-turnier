@@ -1,0 +1,262 @@
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+/* Karte nach dem Leaderboard-Muster (Chat): Gradient-Fläche mit weichem
+   Schatten und innerer Oberkante. overflow:hidden, damit die animierte Höhe
+   des Detailbereichs sauber an den 16px-Radius geclippt wird. */
+.card {
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Eintritts-Animation auf dem <li>, nicht auf der Karte: .glow (globals.css)
+   setzt ebenfalls `animation` und würde sich sonst mit ihr überschreiben. */
+.item {
+  /* Platz für die fixed BottomNav beim scrollIntoView nach dem Aufklappen. */
+  scroll-margin-bottom: 110px;
+  animation: card-enter 0.22s ease-out both;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Muss nach .card stehen (gleiche Spezifität) - ersetzt nur den Hintergrund,
+   Rand und Schatten bleiben von .card. */
+.cardMe {
+  background: linear-gradient(145deg, rgb(var(--accent-rgb) / 0.12) 0%, rgb(var(--accent-rgb) / 0.04) 100%);
+}
+
+.cardOpen {
+  border-color: rgb(var(--accent-rgb) / 0.38);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28), 0 0 0 1px rgb(var(--accent-rgb) / 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Kritische/knappe Tische farblich markiert (spec, "Liste"-Ansicht) - nach
+   .cardOpen, damit die Warnfarbe auch aufgeklappt sichtbar bleibt. */
+.critical {
+  border-color: var(--danger);
+}
+
+.warning {
+  border-color: var(--gold);
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.row:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.rank {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.4rem;
+  width: 26px;
+  text-align: center;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+/* min-width:0 ist nötig, damit der Name in der Flex-Reihe per Ellipsis
+   gekürzt werden kann. */
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.you {
+  font-size: 0.65rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.12);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-weight: 600;
+}
+
+.bar {
+  display: block;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+.pts {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  flex-shrink: 0;
+  min-width: 44px;
+  text-align: right;
+  color: var(--text);
+}
+
+.ptsMax {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Aufgeklappte Sitzplatz-Liste eines Tisches - Hinzufügen/Entfernen direkt aus
+   der Liste-Ansicht heraus. grid-template-rows 0fr -> 1fr ist der CSS-only
+   Trick, um Inhalt mit unbekannter Höhe sauber ein-/auszublenden (kein
+   framer-motion, kein JS-Höhenmessen nötig). */
+.detailWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s ease-in-out;
+}
+
+.detailWrapperOpen {
+  grid-template-rows: 1fr;
+}
+
+.detailInner {
+  overflow: hidden;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 16px 14px;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.detailNum {
+  flex-shrink: 0;
+  width: 34px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.detailName {
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.detailBank {
+  margin-left: 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.detailRemove {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--danger);
+  color: white;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.detailRemove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.detailAdd {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detailAdd:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.bankWord {
+  font-size: 0.6em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.15em;
+}

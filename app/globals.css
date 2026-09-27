@@ -1,13 +1,49 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Basis-Palette (vorgegeben): Wein/Bordeaux, warmes Bronze/Tan, dunkles
+     Tannengrün, fast Schwarz, helles Grau. Surface/Border/Muted sind daraus
+     abgeleitete Zwischentöne, keine neuen Farbfamilien. */
+  --wine: #390517;
+  --bronze: #a38560;
+  --deep-teal: #16302b;
+  --background: #03110d;
+  --foreground: #e0e0e0;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --surface: #16302b;
+  --surface-2: #1b3a33;
+  /* Dritte, hellste Stufe der Surface-Leiter (Chat: "dark glass dashboard"
+     Design-System) - für Hover/Chip-Zustände, die sich von --surface-2
+     abheben sollen, ohne eine neue Farbfamilie einzuführen. */
+  --surface-3: #234a41;
+  --border: #2a4a42;
+  --text: #e0e0e0;
+  --text-muted: #93a39d;
+  --danger: #d1425f;
+  --gold: #a38560;
+  --accent: #a38560;
+  /* RGB-Tripel des Akzents für alphakomponierbare Verwendung, z.B.
+     rgb(var(--accent-rgb) / 0.18) statt hartkodierter rgba(163,133,96,...)
+     Wiederholungen (Chat-Hinweis: "known warts, define alpha-variant
+     tokens"). */
+  --accent-rgb: 163 133 96;
+
+  /* Wiederverwendbare Gradients statt flacher Füllungen - siehe Chat: "mehr
+     Highlight-Gradients, sieht sonst langweilig aus". */
+  --gradient-accent: linear-gradient(135deg, #d4b788 0%, #a38560 55%, #8a6c48 100%);
+  --gradient-surface: linear-gradient(160deg, rgba(14, 20, 19, 0.75), rgba(18, 40, 36, 0.6));
+  --gradient-wine: linear-gradient(135deg, #5c1029, #390517 70%);
+  --gradient-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.18));
+
+  /* "Liquid Glass"-Tokens (Chat: Design-Sprache aus einem anderen Projekt
+     übernehmen) - nur für schwebende Chrome-Elemente über scrollendem Inhalt
+     (BlindBanner, Modal-Scrims, Toasts), siehe .glassChrome unten. Bewusst aus
+     der bestehenden Wein/Bronze/Tannengrün-Palette abgeleitet statt der
+     Gold/Navy-Referenzpalette. */
+  --glass-bg: rgba(9, 20, 17, 0.94);
+  --glass-bg-enhanced: rgba(22, 48, 43, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.8);
+
+  color-scheme: dark;
 }
 
 html {
@@ -17,19 +53,85 @@ html {
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
+  /* clip statt hidden (Chat, "dark glass dashboard" Lessons-Learned): hidden
+     bricht auf Android Chrome gelegentlich das vertikale Scrollen, clip nicht -
+     beide unterbinden horizontales Overflow gleichermaßen. */
+  overflow-x: clip;
 }
 
 body {
+  position: relative;
   min-height: 100%;
   display: flex;
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Stimmungsbild als Hintergrund, mit dunklem Verlauf für Lesbarkeit der UI
+   darüber. position: fixed auf einem Pseudo-Element statt background-attachment:
+   fixed, da letzteres auf iOS Safari (Haupt-Zielgerät laut Spec) unzuverlässig
+   ist. Das Motiv (Karten) sitzt im unteren Bilddrittel - center/bottom hält es
+   auf breiten/kurzen Viewports (Tablet/Desktop) sichtbar statt es wegzuschneiden. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse at top, rgba(90, 15, 40, 0.4), transparent 60%),
+    linear-gradient(rgba(3, 17, 13, 0.6), rgba(3, 17, 13, 0.92)),
+    url("/images/poker-background.jpg") center bottom / cover no-repeat;
+}
+
+/* Dezente Korn-Textur obendrauf (Stimmungsreferenz: mattes, texturiertes
+   Schwarz). Rein CSS, kein zusätzliches Bild-Asset. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Blendet scrollenden Inhalt sanft in die fixed BottomNav-Pille unten ein,
+   statt hart darunter abzuschneiden (Chat: "dark glass dashboard"
+   Design-System, §4c). Kein fadeTop mehr unten im Dokument, aber Hamburger-
+   Menü/Verwalten-Icon oben sind mittlerweile wieder eigene fixed Pillen
+   (Chat: "and they need to be fixed") - brauchen bewusst keinen Fade, weil
+   sie klein/rund sind und nicht wie ein breiter Balken Content verdecken. */
+.fadeBottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  z-index: 190;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--background) 0%, transparent 100%);
+}
+
+/* Z-Index-Leiter fürs ganze Projekt (Chat: "dark glass dashboard" §10) - mit
+   dem Fade-Gradient bei 190 mussten alle bisherigen Chrome-/Modal-Werte
+   (vorher 30-100, ad-hoc) neu einsortiert werden, sonst hätte der Fade über
+   offenen Dialogen gerendert:
+     Inhalt              (kein z-index, normaler Fluss)
+     Fade-Gradient         190   (.fadeBottom oben)
+     schwebende Chrome     200   (BottomNav/Hamburger-Wrapper/Verwalten-Icon -
+                                  BlindBanner ist retired, Blinds leben jetzt
+                                  zentriert in der BottomNav)
+     HamburgerMenu/BlindPill-Dropdown  250-251  (eigener Backdrop+Panel über
+                                  der Chrome, unter den Sheet-Scrims)
+     Sheet-Scrims          299   (ManageTableSheet/BlindScheduleSheet/TournamentSetupSheet)
+     Modals/Toasts         500   (DrawDialog, ConfirmDialog, Toast)
+     Voller Alert-Flash    600   (FullScreenAlert - bewusst über allem anderen,
+                                  spec: "vollflächiger, deutlich sichtbarer Alert") */
 
 * {
   box-sizing: border-box;
@@ -42,8 +144,145 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* Konsistentes Tap-Feedback als Default für jeden Button in der App -
+   einzelne Komponenten können das mit einer spezifischeren :active-Regel
+   überschreiben, müssen es aber nicht extra ergänzen. */
+button {
+  font: inherit;
+  transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Wiederverwendbare Ein-/Ausblend-Animationen für Overlays, Sheets, Dialoge und
+   Banner (siehe Chat: "Animationen und Übergänge hinzufügen"). */
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-slide-down {
+  from {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-pop-in {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes banner-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes banner-drop-in {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes content-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Umsetzungs-Signal: goldener Randglühen-Puls an Quell-/Zieltisch (spec,
+   "Umsetzungs-Signal"). Angewandt via .glow Klasse für ~1.3s. */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(163, 133, 96, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(163, 133, 96, 0.55);
+  }
+}
+
+.glow {
+  animation: glow-pulse 1.3s ease-in-out;
+}
+
+/* "Liquid Glass"-Rezept für schwebende Chrome-Elemente (fixed über scrollendem
+   Content: BlindBanner, Modal-Scrims, Toasts) - NICHT für Karten/Inhaltsflächen
+   verwenden, das wirkt matschig und kostet auf Mobile Performance (Chat-Regel:
+   Glass nur auf Chrome, nie auf scrollendem Inhalt). Ein Ort für das Rezept
+   statt Kopien pro Komponente - wie .glow als roher Klassenname zusätzlich zur
+   eigenen CSS-Modul-Klasse angewendet, z.B. `${styles.banner} glassChrome`.
+   Opaker Fallback zuerst, @supports schaltet auf echtes Blur+Saturate um -
+   bewusst nur 2px Blur (saturate() trägt den Effekt; mehr Blur wirkt wie
+   Milchglas statt Flüssigglas). */
+.glassChrome {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateZ(0);
+  overflow: hidden;
+}
+
+@supports (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)) {
+  .glassChrome {
+    background: var(--glass-bg-enhanced);
+    -webkit-backdrop-filter: blur(2px) saturate(180%);
+    backdrop-filter: blur(2px) saturate(180%);
+  }
+}
+
+/* Lichtkante unten/rechts - der "beleuchteter Glasrand"-Effekt entsteht durch
+   negative inset-Schatten-Spreads. border-radius: inherit, damit die Kante der
+   jeweiligen Komponenten-Form folgt (bei eckigen Elementen wie BlindBanner ist
+   das 0, bei runden Karten/Sheets übernimmt sie deren Radius). */
+.glassChrome::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset -10px -8px 0px -11px var(--glass-highlight), inset 0px -9px 0px -8px var(--glass-highlight);
+  border-radius: inherit;
+  z-index: 1;
+}
+
+/* Vollflächiger roter Alert-Puls beim Umsetzen (spec, "zusätzlich vollflächiger,
+   deutlich sichtbarer Alert"). */
+@keyframes alert-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(209, 66, 95, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 60px 12px rgba(209, 66, 95, 0.65);
   }
 }

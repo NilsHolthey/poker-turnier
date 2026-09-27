@@ -2,16 +2,26 @@
   "name": "poker-turnier",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:init": "node --env-file=.env.local scripts/init-db.mjs",
+    "db:seed": "node --env-file=.env.local scripts/seed-tournament.mjs",
+    "qr:login": "node --env-file=.env.local scripts/generate-login-qr-codes.mjs",
+    "push:test": "node --env-file=.env.local scripts/test-push.mjs",
+    "test": "node --test lib/core/*.test.js"
   },
   "dependencies": {
+    "@auth0/nextjs-auth0": "^4.29.0",
+    "mongodb": "7.5.0",
     "next": "16.3.5",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "eslint": "^9",

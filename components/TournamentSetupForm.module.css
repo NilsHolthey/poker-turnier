@@ -1,0 +1,208 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.field input,
+.field textarea {
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.row .field {
+  /* Gleich breite Spalten ohne Umbruch des Labels ("Plätze pro Tisch"):
+     flex-basis 0 + min-width 0, damit die Input-Mindestbreite die Spalten
+     nicht ungleich aufbläht. */
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.row .field input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: -8px;
+}
+
+.playerRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Eigener Scrollbereich statt die ganze Ansicht zu verlängern, wenn per
+     "Auf Kapazität auffüllen" bis zu 48 Zeilen entstehen (Chat). */
+  max-height: 440px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Eigener Rahmen mit minimal abgesetztem Hintergrund statt Ausblende-
+     Verlauf (Chat), damit klar ist, dass es ein eigener Scrollbereich ist. */
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.playerIndex {
+  flex-shrink: 0;
+  width: 38px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+.playerRow input {
+  flex: 1;
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.removeRow {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.removeRow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.addRow {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px dashed var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addRow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.advancedToggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.advanced {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(163, 133, 96, 0.06);
+}
+
+.error {
+  font-size: 0.82rem;
+  color: var(--danger);
+}
+
+.submit {
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--gradient-accent);
+  color: #16130d;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(163, 133, 96, 0.3);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
+.bankIndex {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.bankIndex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.bankWord {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

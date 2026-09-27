@@ -1,0 +1,123 @@
+/* Sheet hängt oben statt unten - eine Bottom-Sheet würde auf dem Handy genau da
+   sitzen, wo die Tastatur aufklappt und das Namensfeld verdecken. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 299;
+  animation: overlay-fade-in 0.2s ease;
+  /* Sheet hängt oben am Viewport - ohne das säße es unter Notch/Dynamic
+     Island/Status-Leiste statt sichtbar darunter zu beginnen. */
+  padding-top: env(safe-area-inset-top);
+}
+
+.sheet {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 18px 18px;
+  padding: 18px 20px 28px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: sheet-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.addForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.addForm label,
+.renameSection h4 {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+}
+
+.addRow input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.addRow button {
+  width: 42px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.addRow button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: var(--danger);
+}
+
+.renameSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.renameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seatNum {
+  width: 40px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.renameRow input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}

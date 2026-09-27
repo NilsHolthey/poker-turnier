@@ -1,0 +1,50 @@
+/* Kompakter Chip für die BottomNav (Chat-Redesign: "move the dein tisch part
+   in the bottom nav"). */
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 4px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 11px;
+  corner-shape: squircle;
+  border: 1px solid rgba(249, 248, 248, 0.35);
+  background-image: var(--gradient-sheen);
+  color: #0b0f0d;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}

@@ -1,0 +1,41 @@
+@keyframes toast-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  88% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
+/* Über dem BlindBanner statt im Header. Abstand an dessen neue, kleinere
+   Pillenform angepasst (vorher randloser 90px-Balken, jetzt ~48px hohe Pille
+   mit 10px Bodenabstand, siehe BlindBanner.module.css). */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 500;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(22, 48, 43, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  animation: toast-fade 2.2s ease forwards;
+  pointer-events: none;
+}

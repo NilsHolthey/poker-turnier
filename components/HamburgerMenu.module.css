@@ -1,0 +1,101 @@
+/* Fixed auf dem WRAPPER (Chat: "and they need to be fixed"), nicht auf dem
+   Trigger-Button selbst - sonst würde der Wrapper (bleibt sonst normal im
+   Fluss) auf 0×0 kollabieren, sobald sein einziges Kind fixed positioniert
+   ist, und das absolut positionierte .menu würde relativ zu dieser
+   kollabierten Stelle statt zur tatsächlichen, beim Scrollen weiter sichtbaren
+   Button-Position verankern. So bewegen sich Button und Dropdown als eine
+   Einheit. */
+.wrapper {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 16px);
+  left: 12px;
+  z-index: 200;
+}
+
+/* Ab Tablet an der linken Kante der zentrierten 860px-Spalte statt am echten
+   Browserfensterrand - konsistent mit dem Verwalten-Icon/BottomNav/BlindBanner. */
+@media (min-width: 900px) {
+  .wrapper {
+    left: max(12px, calc((100vw - 860px) / 2));
+  }
+}
+
+/* Eigene runde Glas-Pille statt Teil eines gemeinsamen Header-Balkens
+   (Chat: "buttons should not be in a header ... should be two pills"). */
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.trigger:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Unsichtbar, deckt den ganzen Viewport ab - fängt Taps außerhalb des Menüs
+   ab, ohne einen globalen document-Klick-Listener zu brauchen. Sitzt zwischen
+   Chrome (200) und Sheet-Scrims (299), analog zur Z-Index-Leiter in
+   app/globals.css. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 251;
+  min-width: 220px;
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: dialog-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sectionLabel {
+  padding: 8px 12px 4px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.item:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--glass-border);
+}

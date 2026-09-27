@@ -1,0 +1,186 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 299;
+  animation: overlay-fade-in 0.2s ease;
+  /* Sheet hängt oben am Viewport - ohne das säße es unter Notch/Dynamic
+     Island/Status-Leiste statt sichtbar darunter zu beginnen. */
+  padding-top: env(safe-area-inset-top);
+}
+
+.sheet {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 18px 18px;
+  padding: 18px 20px 28px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: sheet-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.field > input {
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.levelRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.levelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.levelIndex {
+  flex-shrink: 0;
+  width: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+.blindInputs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.blindInputs input,
+.durationInput {
+  min-width: 0;
+  font-size: 0.9rem;
+  padding: 9px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  text-align: center;
+}
+
+.blindInputs input {
+  flex: 1;
+}
+
+.durationInput {
+  flex-shrink: 0;
+  width: 56px;
+}
+
+.slash {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.pauseTag {
+  flex: 1;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pauseToggle,
+.removeRow {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.removeRow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.addRow {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px dashed var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.error {
+  font-size: 0.82rem;
+  color: var(--danger);
+}
+
+.submit {
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--gradient-accent);
+  color: #16130d;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(163, 133, 96, 0.3);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}

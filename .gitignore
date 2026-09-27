@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# local secrets (credentials, seed users, generated login QR codes)
+/private/
+
+# local Claude Code settings
+.claude/settings.local.json
 
 # vercel
 .vercel

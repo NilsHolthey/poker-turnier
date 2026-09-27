@@ -1,0 +1,89 @@
+/* Bottom-Padding = Abstand zur Kapsel darunter (Chat-Wunsch: "gap between
+   tables and table capsule a bit"), wächst ab Tablet zusätzlich mit (siehe
+   TableCapsule.module.css .wrapper - beide zusammen ergeben den "stretched
+   out" Look auf größeren Screens). */
+.wrapper {
+  padding: 20px 16px 40px;
+}
+
+@media (min-width: 640px) {
+  .wrapper {
+    padding-bottom: 52px;
+  }
+}
+
+@media (min-width: 900px) {
+  .wrapper {
+    padding-bottom: 60px;
+  }
+}
+
+.label {
+  display: block;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* nowrap statt wrap (Chat-Redesign: "pills to fit in one row on mobile") -
+   jetzt tragbar, weil jede Pille nur noch eine Ziffer zeigt (siehe
+   TableTabs.js) statt beim aktiven Tab auf den vollen Tischnamen zu wachsen -
+   8 gleich schmale Ziffern-Pillen passen auf jeder Handybreite in eine Zeile. */
+.tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Squircle-Kachel statt Oval (Chat: "tische pills are not round lets try to
+   make the squircle and add the glassChrome class"): feste 1:1-Fläche, die
+   bei schmalen Screens gleichmäßig schrumpft (max 40px), damit 8 Stück in
+   eine Zeile passen. corner-shape: squircle ist Progressive Enhancement -
+   ohne Support bleibt es ein normales abgerundetes Quadrat.
+   Kein .glassChrome mehr (Chat) - Fläche/Rand kommen komplett von hier. */
+.tabs .tab {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 40px;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 15px;
+  corner-shape: squircle;
+  /* Inaktiv = Karten-Look wie in TableList (Chat: "same kind of styling
+     background color border"): Gradient-Fläche mit dünnem hellem Rand, die
+     Ziffer trägt die Tischfarbe (inline color). Aktiv ist die Umkehrung:
+     Fläche in Tischfarbe, dunkle Ziffer. */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Transparent statt Browser-Standard-Buttonfarbe - sonst scheint der UA-
+     Hintergrund unter dem Gradient durch und die Pille sieht anders aus als
+     die Listenkarte. Rezept 1:1 wie .card in TableList.module.css. */
+  background-color: transparent;
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.tabs .tab:active {
+  transform: scale(0.94) translateZ(0);
+}
+
+/* Inline-Style setzt background-color/border-color pro Tischfarbe; das
+   Glanz-Overlay (background-image) legt sich darüber. */
+.tabs .active {
+  color: #0b0f0d;
+  background-image: var(--gradient-sheen);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  scale: 1.1;
+  transition: scale 0.3s ease-in-out;
+  border: 1px solid rgba(249, 248, 248, 0.35);
+
+}

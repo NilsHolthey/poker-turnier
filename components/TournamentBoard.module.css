@@ -1,0 +1,131 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  /* Platz oben für die fixed Hamburger-/Verwalten-Pillen (Chat: "and they
+     need to be fixed"), unten für die BottomNav (BlindBanner ist retired,
+     die Blindanzeige lebt jetzt zentriert darin - nur noch eine fixed Pille
+     statt vorher zwei gestapelten). Genug Reserve unten, dass auch der
+     unterste, absichtlich über den Kapselrand hinausstehende Sitzplatz nicht
+     dahinter verschwindet (Chat: "bottom player sits just behind the bottom
+     pill"). */
+  padding-top: calc(80px + env(safe-area-inset-top));
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+
+/* Responsive: mobile bleibt edge-to-edge, ab Tablet/Desktop zentriert sich der
+   Inhalt in einem wachsenden Container statt gestreckt über die volle Breite. */
+.container {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+@media (min-width: 900px) {
+  .container {
+    max-width: 860px;
+    padding-top: 12px;
+  }
+}
+
+/* Kein verbindender Balken mehr (Chat: "buttons should not be in a header ...
+   should be two pills/buttons") - .header trägt kein eigenes Layout mehr,
+   beide Kinder (Hamburger-Wrapper + Verwalten-Icon) sind jetzt einzeln fixed
+   positioniert (Chat: "and they need to be fixed") und ignorieren den
+   normalen Fluss ohnehin. */
+.header {
+  margin: 0;
+}
+
+/* Verwalten-Icon rechts, fixed wie BottomNav/BlindBanner (Chat-Redesign:
+   "top left hamburger menu ... top right ... edit / verwalten button ...
+   only icon" + "and they need to be fixed") - wirkt immer auf den gerade
+   aktiven Tisch, siehe canManageActiveTable in TournamentBoard.js. Eigene
+   runde Glas-Pille statt Teil eines gemeinsamen Balkens. */
+.headerIconButton {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 16px);
+  right: 12px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.headerIconButton:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Ab Tablet an der rechten Kante der zentrierten 860px-Spalte statt am echten
+   Browserfensterrand - konsistent mit BottomNav/BlindBanner. */
+@media (min-width: 900px) {
+  .headerIconButton {
+    right: max(12px, calc((100vw - 860px) / 2));
+  }
+}
+
+/* Dashboard-Panel-Look ab Tablet: abgesetzte Fläche mit Tiefe statt loser
+   Elemente direkt auf dem Hintergrund. Auf Mobile bleibt es randlos (typisches
+   App-Pattern statt einer sichtbaren Karte auf kleinem Screen). Die
+   trennende border-top ist raus (Chat-Wunsch: "remove the leftover boarder
+   top") - Hamburger/Verwalten/Blind-Pille sind längst eigene fixed
+   Glas-Pillen, die den Bruch zum Inhalt schon visuell übernehmen. */
+.panel {
+  margin-top: 12px;
+}
+
+@media (min-width: 640px) {
+  .panel {
+    margin-top: 12px;
+    /* Halbtransparent statt voll deckend, damit das Hintergrundbild durch die
+       Karte hindurchscheint statt komplett verdeckt zu werden. */
+    background: var(--gradient-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px 24px 40px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* Chat-Wunsch: "on tablet it can be stretched out vertically in general". */
+@media (min-width: 900px) {
+  .panel {
+    padding: 40px 32px 52px;
+  }
+}
+
+.capsuleArea {
+  animation: content-fade-in 0.2s ease;
+}
+
+/* Nur die Tisch-Kapsel-Ansicht braucht das ganz große horizontale Padding:
+   Sitzplätze stehen absichtlich ca. 12% der Kapsel-Breite über die Kapsel
+   hinaus (lib/client/seatPositions.js) plus ihr eigener Radius (~26px) - bei
+   290-320px Kapsel-Breite sind das ~60-64px Platzbedarf pro Seite, sonst ragen
+   sie über den Rand der Karte hinaus statt sauber darin zu stehen. Die
+   Liste-Ansicht im selben .panel braucht das nicht und bekäme sonst unnötig
+   riesige Seitenränder. */
+@media (min-width: 640px) {
+  .capsuleArea {
+    padding: 0 44px;
+  }
+}
+
+@media (min-width: 900px) {
+  .capsuleArea {
+    padding: 0 52px;
+  }
+}
+
+.status {
+  padding: 24px 16px;
+  color: var(--text-muted);
+  text-align: center;
+}

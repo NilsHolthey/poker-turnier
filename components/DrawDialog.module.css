@@ -1,0 +1,170 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  /* Zentriert - betrifft Notch/Home-Indicator nur im Querformat, wo die Karte
+     sonst bis an eine seitliche Notch heranrücken könnte. */
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  animation: overlay-fade-in 0.2s ease;
+}
+
+/* Voll deckend statt der halbtransparenten --gradient-surface (die ist fürs
+   Panel gedacht, wo das Hintergrundfoto bewusst durchscheinen soll) - der
+   Auslosungs-Dialog ist ein Fokus-Modal, da wirkte die Transparenz nur unruhig/
+   falsch statt wie eine klare Karte. */
+.card {
+  background: linear-gradient(160deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  animation: dialog-pop-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rolling {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+}
+
+.dice {
+  font-size: 2.6rem;
+  animation: spin 0.4s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rollingValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.playerBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.playerNum {
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: var(--gradient-accent);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.playerName {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.bankTag {
+  margin-left: 6px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.route {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tableChip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2px solid;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.noAlternative {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.arrow {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rerollButton {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border) !important;
+}
+
+.rerollButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.confirmButton {
+  background: var(--gradient-accent);
+  color: #16130d;
+  box-shadow: 0 8px 20px rgba(163, 133, 96, 0.35);
+}
+
+.confirmButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.dissolveBanner {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(209, 66, 95, 0.14);
+  border: 1px solid rgba(209, 66, 95, 0.4);
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.bankWord {
+  font-size: 0.6em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.15em;
+}
