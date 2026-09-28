@@ -1,23 +1,24 @@
+/* width: 100% ist nötig: body ist eine Flex-Spalte, dort lässt margin: auto
+   die Seite sonst auf Inhaltsbreite schrumpfen (wirkte wie großer Rand). */
 .page {
+  width: 100%;
   max-width: 560px;
   margin: 0 auto;
-  padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom))
-    max(20px, env(safe-area-inset-left));
+  /* Oben bündig mit der fixen BackButton-Pille (safe-area + 16px). */
+  padding: calc(env(safe-area-inset-top) + 16px) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
 }
 
+/* Titel in einer 44px-Zeile auf Höhe der BackButton-Pille, seitlich Platz
+   für die Pille freigehalten. */
 .header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 24px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 52px;
+  margin-bottom: 16px;
   text-align: center;
-}
-
-.backLink {
-  align-self: flex-start;
-  font-size: 0.85rem;
-  color: var(--text-muted);
 }
 
 .title {
@@ -34,7 +35,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  margin: 0 auto 28px;
+  margin: 0 auto 16px;
   padding: 20px;
   width: fit-content;
   min-width: 160px;

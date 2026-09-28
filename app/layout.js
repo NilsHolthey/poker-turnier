@@ -1,4 +1,5 @@
 import { Bebas_Neue, DM_Sans } from "next/font/google";
+import NativeFeel from "@/components/NativeFeel";
 import "./globals.css";
 
 // "dark glass dashboard" Design-System (Chat): Bebas Neue für große Zahlen/
@@ -45,6 +46,14 @@ export const viewport = {
   // den Komponenten unten echte Werte statt immer 0 (spec-Erweiterung, siehe
   // Chat: "Design für Notch auf iPhone/Pixel etc. reconsiderieren").
   viewportFit: "cover",
+  // App-Gefühl statt Webseite: kein Pinch-Zoom und - wichtiger - kein
+  // automatisches Reinzoomen von iOS Safari beim Fokus auf Inputs mit
+  // font-size < 16px (maximumScale 1 unterbindet genau das). iOS ignoriert
+  // userScalable für Pinch-Gesten, das fängt components/NativeFeel.js ab.
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }) {
@@ -55,6 +64,7 @@ export default function RootLayout({ children }) {
             BottomNav-Pille (inkl. Blindanzeige, BlindBanner ist retired)
             bleibt dort fixed, dafür bleibt der Fade dort sinnvoll. */}
         <div className="fadeBottom" aria-hidden="true" />
+        <NativeFeel />
         {children}
       </body>
     </html>

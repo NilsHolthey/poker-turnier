@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import BackButton from "./BackButton";
 import { formatBlindLevel, computeEffectiveBlindState } from "@/lib/core";
 import styles from "./OverviewBoard.module.css";
 
@@ -29,10 +29,8 @@ export default function OverviewBoard({ tournamentName, schedule, playerCount })
 
   return (
     <main className={styles.page}>
+      <BackButton />
       <div className={styles.header}>
-        <Link href="/" className={styles.backLink}>
-          ← Zurück
-        </Link>
         <h1 className={styles.title}>{tournamentName}</h1>
       </div>
 

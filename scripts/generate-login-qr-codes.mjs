@@ -5,18 +5,20 @@
 // scannable QR code would be a real security anti-pattern, Auth0 doesn't
 // support it either). Run with `npm run qr:login` (optionally pass a base URL:
 // `npm run qr:login -- https://your-deployed-app.example`).
+// Das Passwort steht als Text auf der Karte (aus private/auth0-seed-users.json,
+// siehe scripts/set-passwords.mjs) - die Karten bleiben deshalb in private/.
 import QRCode from "qrcode";
-import { writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 
 const baseUrl = (process.argv[2] || process.env.APP_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 
-const usernames = ["admin", "tisch1", "tisch2", "tisch3", "tisch4", "tisch5", "tisch6", "tisch7", "tisch8"];
+const { users } = JSON.parse(await readFile("private/auth0-seed-users.json", "utf8"));
 
 const cards = await Promise.all(
-  usernames.map(async (username) => {
+  users.map(async ({ username, password }) => {
     const url = `${baseUrl}/auth/login?login_hint=${encodeURIComponent(username)}`;
     const qrDataUrl = await QRCode.toDataURL(url, { width: 320, margin: 1 });
-    return { username, url, qrDataUrl };
+    return { username, password, url, qrDataUrl };
   })
 );
 
@@ -31,6 +33,7 @@ const html = `<!DOCTYPE html>
   .card { border: 1px solid #ccc; border-radius: 12px; padding: 16px; text-align: center; page-break-inside: avoid; }
   .card img { width: 100%; height: auto; }
   .card h2 { margin: 0 0 12px; font-size: 1.1rem; }
+  .card .password { margin: 12px 0 0; font: 600 1.4rem ui-monospace, Menlo, monospace; letter-spacing: 0.05em; }
   .card p { margin: 8px 0 0; font-size: 0.75rem; color: #555; word-break: break-all; }
   @media print {
     .grid { grid-template-columns: repeat(2, 1fr); }
@@ -39,7 +42,7 @@ const html = `<!DOCTYPE html>
 </head>
 <body>
   <h1>Poker-Turnier – Login-QR-Codes</h1>
-  <p>Scannen füllt den Benutzernamen automatisch aus, Passwort muss weiterhin eingegeben werden.</p>
+  <p>Scannen füllt den Benutzernamen automatisch aus, danach das Passwort von der Karte eingeben.</p>
   <div class="grid">
     ${cards
       .map(
@@ -47,6 +50,7 @@ const html = `<!DOCTYPE html>
     <div class="card">
       <h2>${c.username}</h2>
       <img src="${c.qrDataUrl}" alt="Login-QR für ${c.username}" />
+      <div class="password">${c.password}</div>
       <p>${c.url}</p>
     </div>`
       )

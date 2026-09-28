@@ -10,6 +10,7 @@ import styles from "./ManageTableSheet.module.css";
 // auftauchen, ohne die restlichen Eingaben zurückzusetzen.
 export default function ManageTableSheet({ table, players, onAdd, onRename, onClose, busy }) {
   const [newName, setNewName] = useState("");
+  const isFull = players.length >= table.maxSeats;
 
   function handleAdd(e) {
     e.preventDefault();
@@ -24,46 +25,71 @@ export default function ManageTableSheet({ table, players, onAdd, onRename, onCl
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.sheet}
+        style={{ "--table-color": table.color }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.header}>
-          <h3>{table.label} verwalten</h3>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Schließen">
-            ×
+          <div className={styles.titleBlock}>
+            <h3 className={styles.title}>{table.label}</h3>
+            <span className={styles.subtitle}>
+              {players.length}/{table.maxSeats} Spieler · verwalten
+            </span>
+          </div>
+          <button type="button" className={`${styles.close} glassChrome`} onClick={onClose} aria-label="Schließen">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
           </button>
         </div>
 
-        <form className={styles.addForm} onSubmit={handleAdd}>
-          <label htmlFor="new-player-name">Spieler hinzufügen</label>
+        <form className={styles.section} onSubmit={handleAdd}>
+          <label htmlFor="new-player-name" className={styles.sectionLabel}>
+            Spieler hinzufügen
+          </label>
           <div className={styles.addRow}>
             <input
               id="new-player-name"
               type="text"
-              placeholder="Name (optional)"
+              className={styles.addInput}
+              placeholder={isFull ? "Tisch ist voll" : "Name (optional)"}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              disabled={busy || players.length >= table.maxSeats}
+              enterKeyHint="done"
+              disabled={busy || isFull}
             />
-            <button type="submit" disabled={busy || players.length >= table.maxSeats}>
-              +
+            <button type="submit" className={styles.addButton} disabled={busy || isFull} aria-label="Spieler hinzufügen">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
             </button>
           </div>
-          {players.length >= table.maxSeats && <p className={styles.hint}>Tisch ist voll</p>}
         </form>
 
-        <div className={styles.renameSection}>
-          <h4>Namen bearbeiten</h4>
-          {players.map((player) => (
-            <div key={player._id} className={styles.renameRow}>
-              <span className={styles.seatNum}>{player.num}</span>
-              <input
-                type="text"
-                defaultValue={player.name}
-                onBlur={(e) => handleRenameBlur(player._id, e)}
-                disabled={busy}
-              />
-            </div>
-          ))}
-        </div>
+        {players.length > 0 && (
+          <div className={styles.section}>
+            <h4 className={styles.sectionLabel}>Namen bearbeiten</h4>
+            {players.map((player) => (
+              <label key={player._id} className={styles.renameRow}>
+                <span className={styles.seatNum}>{player.num}</span>
+                <input
+                  type="text"
+                  className={styles.renameInput}
+                  defaultValue={player.name}
+                  onBlur={(e) => handleRenameBlur(player._id, e)}
+                  // Enter übernimmt den Namen (onBlur speichert) statt nichts zu tun.
+                  onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                  enterKeyHint="done"
+                  disabled={busy}
+                />
+                {player.isBank && <span className={styles.bank}>Bank $</span>}
+              </label>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import BackButton from "./BackButton";
 import TournamentSetupForm from "./TournamentSetupForm";
 import BlindScheduleSheet from "./BlindScheduleSheet";
 import ConfirmDialog from "./ConfirmDialog";
@@ -59,10 +59,8 @@ export default function AdminBoard({ tournamentId, tournamentName, schedule, set
 
   return (
     <main className={styles.page}>
+      <BackButton />
       <div className={styles.header}>
-        <Link href="/" className={styles.backLink}>
-          ← Zurück zum Board
-        </Link>
         <h1 className={styles.title}>Admin-Bereich</h1>
         {/* Chat-Wunsch: "missing notifications bell on admin" - admin bekommt
             jetzt bei jedem Zug an jedem Tisch eine Push-Benachrichtigung (siehe

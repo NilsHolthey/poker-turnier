@@ -103,6 +103,38 @@
 
 .capsuleArea {
   animation: content-fade-in 0.2s ease;
+  /* Horizontale Gesten gehören dem Tisch-Wischen (TournamentBoard), vertikal
+     scrollt der Browser weiter normal. */
+  touch-action: pan-y;
+}
+
+.slideFromRight {
+  animation: table-slide-from-right 0.25s ease-out;
+}
+
+.slideFromLeft {
+  animation: table-slide-from-left 0.25s ease-out;
+}
+
+@keyframes table-slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+@keyframes table-slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slideFromRight,
+  .slideFromLeft {
+    animation: none;
+  }
 }
 
 /* Nur die Tisch-Kapsel-Ansicht braucht das ganz große horizontale Padding:
