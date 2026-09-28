@@ -3,29 +3,38 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-start;
   justify-content: center;
   z-index: 299;
   animation: overlay-fade-in 0.2s ease;
-  /* Sheet hängt oben am Viewport - ohne das säße es unter Notch/Dynamic
-     Island/Status-Leiste statt sichtbar darunter zu beginnen. */
-  padding-top: env(safe-area-inset-top);
+  /* Unter Notch/Dynamic Island beginnen, seitlich wie die Chrome-Pillen. */
+  padding: calc(env(safe-area-inset-top) + 12px) 12px 12px;
 }
 
+/* Schwebende Glas-Karte im Stil von Hamburger-Menü/BottomNav - bewusst ohne
+   .glassChrome (dessen overflow: hidden würde das Scrollen verhindern) und
+   deutlich dunkler hinterlegt, damit die Eingaben über dem
+   Hintergrundbild gut lesbar bleiben. Tischfarbe als Akzent oben. */
 .sheet {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  border-radius: 0 0 18px 18px;
-  padding: 18px 20px 28px;
   width: 100%;
   max-width: 480px;
-  max-height: 85vh;
+  max-height: calc(100dvh - env(safe-area-inset-top) - 24px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  border: 1px solid var(--glass-border);
+  border-top: 3px solid var(--table-color, var(--accent));
+  background: rgba(6, 14, 12, 0.88);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   animation: sheet-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -33,31 +42,61 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.9rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--table-color, var(--text));
+}
+
+.subtitle {
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font-size: 1.1rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--text);
   cursor: pointer;
 }
 
-.addForm {
+.close:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.section {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.addForm label,
-.renameSection h4 {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+.sectionLabel {
+  margin-bottom: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: var(--text-muted);
 }
 
 .addRow {
@@ -65,59 +104,100 @@
   gap: 8px;
 }
 
-.addRow input {
-  flex: 1;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
+.addInput,
+.renameInput {
+  font: inherit;
+  font-size: 1rem;
   color: var(--text);
 }
 
-.addRow button {
-  width: 42px;
-  border-radius: 10px;
+.addInput {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+  transition: border-color 0.15s;
+}
+
+.addInput:focus {
+  outline: none;
+  border-color: rgb(var(--accent-rgb) / 0.6);
+}
+
+.addInput::placeholder {
+  color: var(--text-muted);
+}
+
+.addButton {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
   border: none;
-  background: var(--accent);
-  color: white;
-  font-size: 1.2rem;
+  background: var(--gradient-accent);
+  color: #16130d;
+  box-shadow: 0 6px 16px rgb(var(--accent-rgb) / 0.3);
   cursor: pointer;
 }
 
-.addRow button:disabled {
-  opacity: 0.5;
+.addButton:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.addButton:disabled {
+  opacity: 0.4;
+  box-shadow: none;
   cursor: default;
 }
 
-.hint {
-  font-size: 0.78rem;
-  color: var(--danger);
-}
-
-.renameSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
+/* Gleiche Zeilen wie die aufgeklappte Liste (TableList .detailRow): dunkle
+   Zeile, Platznummer in Akzentfarbe, Input randlos darin. Fokus markiert die
+   ganze Zeile. */
 .renameRow {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.15s;
+}
+
+.renameRow:focus-within {
+  border-color: rgb(var(--accent-rgb) / 0.6);
 }
 
 .seatNum {
-  width: 40px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
   flex-shrink: 0;
+  width: 34px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
 }
 
-.renameRow input {
+.renameInput {
   flex: 1;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
+  min-width: 0;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+}
+
+.renameInput:focus {
+  outline: none;
+}
+
+.bank {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
 }

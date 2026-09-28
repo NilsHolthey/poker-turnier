@@ -108,6 +108,11 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   // Übersichts-Popup gezeigt werden kann (Chat-Wunsch).
   const dissolveLogRef = useRef([]);
   const [dissolveOverview, setDissolveOverview] = useState(null);
+  // Wischen links/rechts in der Tische-Ansicht wechselt zum nächsten/vorigen
+  // Tisch (Chat-Wunsch); slideDirection steuert, von welcher Seite der neue
+  // Tisch hereingleitet.
+  const swipeStartRef = useRef(null);
+  const [slideDirection, setSlideDirection] = useState(null);
 
   useEffect(() => {
     if (!denyToast) return;
@@ -324,6 +329,39 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   }
   const canManageActiveTable = canManageTable(activeTable);
 
+  function selectTable(tableId) {
+    const from = tables.findIndex((t) => t._id === effectiveActiveTableId);
+    const to = tables.findIndex((t) => t._id === tableId);
+    if (to === -1 || to === from) return;
+    setSlideDirection(to > from ? "next" : "prev");
+    setActiveTableId(tableId);
+  }
+
+  function handleSwipeStart(e) {
+    // Auf einem Spieler-Kreis beginnt der Drag zum Umsetzen (TableCapsule) -
+    // der darf nicht gleichzeitig als Wischen zählen.
+    if (e.touches.length !== 1 || e.target.closest("[data-no-swipe]")) {
+      swipeStartRef.current = null;
+      return;
+    }
+    const touch = e.touches[0];
+    swipeStartRef.current = { x: touch.clientX, y: touch.clientY, time: e.timeStamp };
+  }
+
+  function handleSwipeEnd(e) {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    // Nur klar horizontale, zügige Gesten - vertikales Scrollen bleibt unberührt.
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5 || e.timeStamp - start.time > 700) return;
+    const index = tables.findIndex((t) => t._id === effectiveActiveTableId);
+    const target = tables[index + (dx < 0 ? 1 : -1)];
+    if (target) selectTable(target._id);
+  }
+
   return (
     <div className={styles.board}>
       <div className={styles.container}>
@@ -360,15 +398,29 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
 
         <div className={styles.panel}>
           {view === "tische" ? (
-            <div className={styles.capsuleArea}>
+            <div
+              className={styles.capsuleArea}
+              onTouchStart={handleSwipeStart}
+              onTouchEnd={handleSwipeEnd}
+              onTouchCancel={() => (swipeStartRef.current = null)}
+            >
               <TableTabs
                 tables={tables}
                 activeTableId={effectiveActiveTableId}
-                onSelect={setActiveTableId}
+                onSelect={selectTable}
                 glowTableIds={glowTableIds}
               />
               {activeTable && (
-                <>
+                <div
+                  key={activeTable._id}
+                  className={
+                    slideDirection === "next"
+                      ? styles.slideFromRight
+                      : slideDirection === "prev"
+                        ? styles.slideFromLeft
+                        : undefined
+                  }
+                >
                   <TableCapsule
                     key={activeTable._id}
                     table={activeTable}
@@ -382,7 +434,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
                     onQuickAdd={(seatIndex) => handleQuickAdd(activeTable._id, seatIndex)}
                     onReseatPlayer={handleReseatPlayer}
                   />
-                </>
+                </div>
               )}
             </div>
           ) : (

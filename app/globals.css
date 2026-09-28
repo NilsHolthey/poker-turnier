@@ -48,6 +48,18 @@
 
 html {
   height: 100%;
+  /* Kein Doppeltipp-Zoom (Pinch: siehe viewport in app/layout.js). */
+  touch-action: manipulation;
+}
+
+/* Native-App-Gefühl: Scrollen bleibt, nur die Scrollbalken verschwinden -
+   in allen Ansichten und scrollbaren Sheets. */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
 }
 
 html,

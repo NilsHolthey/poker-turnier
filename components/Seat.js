@@ -41,6 +41,7 @@ export default function Seat({
       <div
         className={`${styles.circle} ${isDropTarget ? styles.dropTarget : ""}`}
         onPointerDown={onDragPointerDown}
+        data-no-swipe
       >
         <button
           type="button"

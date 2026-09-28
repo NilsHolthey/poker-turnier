@@ -11,6 +11,8 @@
     "db:init": "node --env-file=.env.local scripts/init-db.mjs",
     "db:seed": "node --env-file=.env.local scripts/seed-tournament.mjs",
     "qr:login": "node --env-file=.env.local scripts/generate-login-qr-codes.mjs",
+    "passwords:generate": "node scripts/set-passwords.mjs",
+    "passwords:apply": "node --env-file=.env.local scripts/set-passwords.mjs --apply",
     "push:test": "node --env-file=.env.local scripts/test-push.mjs",
     "test": "node --test lib/core/*.test.js"
   },
