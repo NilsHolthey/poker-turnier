@@ -23,10 +23,6 @@
 /* Eigene runde Glas-Pille statt Teil eines gemeinsamen Header-Balkens
    (Chat: "buttons should not be in a header ... should be two pills"). */
 .trigger {
-  /* Über dem Backdrop (250), damit das X im geöffneten Zustand selbst
-     antippbar ist statt nur der unsichtbare Backdrop darunter. */
-  position: relative;
-  z-index: 252;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,19 +37,6 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Unsichtbar, deckt den ganzen Viewport ab - fängt Taps außerhalb des Menüs
-   ab, ohne einen globalen document-Klick-Listener zu brauchen. Sitzt zwischen
-   Chrome (200) und Sheet-Scrims (299), analog zur Z-Index-Leiter in
-   app/globals.css. */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 250;
-  background: transparent;
-  border: none;
-  cursor: default;
-}
-
 .menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -65,7 +48,63 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  animation: dialog-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+  animation: menu-in 0.14s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+/* Ende der Animation entfernt das Menü (onAnimationEnd in HamburgerMenu.js). */
+.menuClosing {
+  animation: menu-out 0.1s ease-in both;
+  pointer-events: none;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+
+@keyframes menu-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+
+/* Hamburger -> X: äußere Linien drehen in die Mitte, mittlere blendet aus. */
+.lineTop,
+.lineMiddle,
+.lineBottom {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.18s ease-out, opacity 0.1s ease;
+}
+
+.triggerOpen .lineTop {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.triggerOpen .lineMiddle {
+  opacity: 0;
+}
+
+.triggerOpen .lineBottom {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Nicht animation: none - das Entfernen hängt an animationend. */
+  .menu,
+  .menuClosing {
+    animation-duration: 1ms;
+  }
+
+  .lineTop,
+  .lineMiddle,
+  .lineBottom {
+    transition: none;
+  }
 }
 
 .sectionLabel {
