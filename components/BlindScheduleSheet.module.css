@@ -1,90 +1,101 @@
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: 299;
-  animation: overlay-fade-in 0.2s ease;
-  /* Sheet hängt oben am Viewport - ohne das säße es unter Notch/Dynamic
-     Island/Status-Leiste statt sichtbar darunter zu beginnen. */
-  padding-top: env(safe-area-inset-top);
-}
-
-.sheet {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  border-radius: 0 0 18px 18px;
-  padding: 18px 20px 28px;
-  width: 100%;
-  max-width: 480px;
-  max-height: 85vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  animation: sheet-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font-size: 1.1rem;
-  cursor: pointer;
-}
+/* Inhalt des Blindstruktur-Sheets - Hülle/Header/Animation: Sheet.module.css.
+   Zeilen im Stil der aufgeklappten Tischliste (dunkle Zeile, Nummer in
+   Akzentfarbe), passend zu ManageTableSheet. */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 20px;
 }
 
-.field {
+.section {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 0.8rem;
+}
+
+.sectionLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
 
-.field > input {
-  font-size: 0.95rem;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font-family: inherit;
+.startRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.levelRows {
-  display: flex;
-  flex-direction: column;
+.timeInput {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+
+/* Spaltenköpfe über den Zeilen, gleiche Raster-Breiten wie .levelRow. */
+.columns {
+  display: grid;
+  grid-template-columns: 22px 1fr 52px 64px;
   gap: 8px;
+  padding: 0 10px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.columns span:nth-child(2),
+.columns span:nth-child(3) {
+  text-align: center;
 }
 
 .levelRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.15s, background-color 0.15s;
+  animation: level-row-in 0.2s ease-out;
+}
+
+.levelRow:focus-within {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+}
+
+.breakRow {
+  background: rgb(var(--accent-rgb) / 0.08);
+  border-style: dashed;
+  border-color: rgb(var(--accent-rgb) / 0.35);
+}
+
+@keyframes level-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 .levelIndex {
   flex-shrink: 0;
-  width: 20px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  width: 22px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.2rem;
+  line-height: 1;
   color: var(--accent);
   text-align: center;
 }
@@ -97,26 +108,44 @@
   min-width: 0;
 }
 
-.blindInputs input,
-.durationInput {
+.numInput {
   min-width: 0;
-  font-size: 0.9rem;
-  padding: 9px 8px;
+  padding: 8px 6px;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
   color: var(--text);
-  font-family: inherit;
+  font: inherit;
+  font-size: 1rem;
   text-align: center;
+  -moz-appearance: textfield;
+  transition: border-color 0.15s;
 }
 
-.blindInputs input {
+/* Keine Spinner-Pfeile - auf dem Handy nutzlos, am Desktop nur Platzfresser. */
+.numInput::-webkit-outer-spin-button,
+.numInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.numInput:focus {
+  outline: none;
+  border-color: rgb(var(--accent-rgb) / 0.6);
+}
+
+.numInput::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.blindInputs .numInput {
   flex: 1;
 }
 
 .durationInput {
   flex-shrink: 0;
-  width: 56px;
+  width: 52px;
 }
 
 .slash {
@@ -126,41 +155,53 @@
 
 .pauseTag {
   flex: 1;
-  font-size: 0.85rem;
-  font-style: italic;
-  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
   text-align: center;
 }
 
-.pauseToggle,
-.removeRow {
+.iconButton {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
-  font-size: 0.85rem;
   cursor: pointer;
 }
 
-.removeRow:disabled {
-  opacity: 0.4;
+.iconButtonActive {
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  background: rgb(var(--accent-rgb) / 0.15);
+  color: var(--accent);
+}
+
+.iconButton:disabled {
+  opacity: 0.3;
   cursor: default;
 }
 
 .addRow {
-  align-self: flex-start;
   margin-top: 4px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px dashed var(--accent);
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px dashed rgb(var(--accent-rgb) / 0.6);
   background: transparent;
   color: var(--accent);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.addRow:active {
+  background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .error {
@@ -170,17 +211,25 @@
 
 .submit {
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: none;
   background: var(--gradient-accent);
   color: #16130d;
+  font-size: 0.95rem;
   font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(163, 133, 96, 0.3);
+  box-shadow: 0 8px 20px rgb(var(--accent-rgb) / 0.3);
 }
 
 .submit:disabled {
   opacity: 0.6;
   cursor: default;
   box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .levelRow {
+    animation: none;
+  }
 }

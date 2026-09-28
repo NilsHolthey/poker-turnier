@@ -109,24 +109,24 @@
 }
 
 .slideFromRight {
-  animation: table-slide-from-right 0.25s ease-out;
+  animation: table-slide-from-right 0.16s ease-out;
 }
 
 .slideFromLeft {
-  animation: table-slide-from-left 0.25s ease-out;
+  animation: table-slide-from-left 0.16s ease-out;
 }
 
 @keyframes table-slide-from-right {
   from {
     opacity: 0;
-    transform: translateX(40px);
+    transform: translateX(24px);
   }
 }
 
 @keyframes table-slide-from-left {
   from {
     opacity: 0;
-    transform: translateX(-40px);
+    transform: translateX(-24px);
   }
 }
 

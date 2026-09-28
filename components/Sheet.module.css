@@ -1,0 +1,131 @@
+/* Sheet hängt oben statt unten - eine Bottom-Sheet würde auf dem Handy genau da
+   sitzen, wo die Tastatur aufklappt und die Eingabefelder verdecken. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 299;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* Unter Notch/Dynamic Island beginnen, seitlich wie die Chrome-Pillen. */
+  padding: calc(env(safe-area-inset-top) + 12px) 12px 12px;
+  /* Bewusst ohne backdrop-filter: animiertes Blur ruckelt auf Handys. */
+  background: rgba(0, 0, 0, 0.6);
+  animation: sheet-overlay-in 0.16s ease-out both;
+}
+
+/* Etwas länger als sheet-out, damit dessen Animation sicher fertig ist, wenn
+   onAnimationEnd des Overlays onClose auslöst. */
+.overlayClosing {
+  animation: sheet-overlay-out 0.15s ease-in both;
+}
+
+/* Schwebende Glas-Karte im Stil von Hamburger-Menü/BottomNav - bewusst ohne
+   .glassChrome (dessen overflow: hidden würde das Scrollen verhindern) und
+   deutlich dunkler hinterlegt, damit Eingaben über dem Hintergrundbild gut
+   lesbar bleiben. Akzentfarbe (z.B. Tischfarbe) als Kante oben. */
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100dvh - env(safe-area-inset-top) - 24px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  border: 1px solid var(--glass-border);
+  border-top: 3px solid var(--sheet-accent, var(--accent));
+  /* Nahezu opak statt Blur - gleiche Lesbarkeit, flüssigere Animation. */
+  background: rgba(8, 17, 15, 0.97);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform-origin: top center;
+  animation: sheet-in 0.2s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.sheetClosing {
+  animation: sheet-out 0.13s ease-in both;
+}
+
+@keyframes sheet-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Nicht animation: none - onClose hängt am animationend des Overlays. */
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .overlayClosing,
+  .sheet,
+  .sheetClosing {
+    animation-duration: 1ms;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.9rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--sheet-accent, var(--text));
+}
+
+.subtitle {
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.close:active {
+  background: rgba(255, 255, 255, 0.06);
+}
