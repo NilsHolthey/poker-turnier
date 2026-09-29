@@ -7,10 +7,17 @@ import styles from "./TournamentSetupForm.module.css";
 // Turnier-Einstellungen nachträglich ändern (Chat-Wunsch: "edit turnier
 // possibilities"). Nur, was ohne Umbau der bestehenden Tische geht - siehe
 // updateTournamentSettings in lib/db/tournamentEngine.js.
+//
+// "Einfacher Modus" (Chat-Wunsch: "if the new modus was selected, I should
+// not be able to edit anything except the title") - alle anderen Felder
+// werden disabled statt versteckt (admin sieht die laufenden Werte weiter,
+// kann sie aber nicht ändern) - simpleMode selbst ist ohnehin nur bei der
+// Erstellung wählbar, updateTournamentSettings() nimmt es gar nicht entgegen.
 export default function TournamentEditForm({ tournamentId, settings, onSaved }) {
   const [values, setValues] = useState(() => ({ ...settings }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const locked = !!settings.simpleMode;
 
   const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
 
@@ -30,7 +37,7 @@ export default function TournamentEditForm({ tournamentId, settings, onSaved }) 
   const number = (key, label, min = 1, max) => (
     <label className={styles.field}>
       {label}
-      <input type="number" min={min} max={max} value={values[key]} onChange={set(key)} required />
+      <input type="number" min={min} max={max} value={values[key]} onChange={set(key)} disabled={locked} required />
     </label>
   );
 
@@ -41,11 +48,18 @@ export default function TournamentEditForm({ tournamentId, settings, onSaved }) 
         <input value={values.name} onChange={set("name")} required />
       </label>
 
+      {locked && (
+        <p className={styles.hint}>
+          Einfacher Modus: nachträglich ist nur der Turniername änderbar.
+        </p>
+      )}
+
       <label className={styles.checkboxRow}>
         <input
           type="checkbox"
           checked={values.rebuyPhaseActive}
           onChange={(e) => setValues((v) => ({ ...v, rebuyPhaseActive: e.target.checked }))}
+          disabled={locked}
         />
         Rebuy-Phase aktiv (Operatoren dürfen Spieler hinzufügen)
       </label>

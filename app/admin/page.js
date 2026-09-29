@@ -52,6 +52,9 @@ export default async function AdminPage() {
         halbfinaleTableCount: tournament.phasePlans?.[1]?.targetTables ?? PHASES[1].targetTables,
         halbfinaleTableSize: tournament.phasePlans?.[1]?.tableSize ?? PHASES[1].tableSize,
         finaleTableSize: tournament.phasePlans?.[2]?.tableSize ?? PHASES[2].tableSize,
+        // Chat-Wunsch: "if the new modus was selected, I should not be able
+        // to edit anything except the title" - siehe TournamentEditForm.js.
+        simpleMode: !!tournament.config.simpleMode,
       }
     : null;
 

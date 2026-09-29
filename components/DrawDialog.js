@@ -25,6 +25,10 @@ export default function DrawDialog({
   toLabel,
   toColor,
   noAlternative,
+  // Chat-Wunsch "Einfacher Modus": "operators should not accept and reroll,
+  // this could get abused" - kein disabled-Button, sondern ganz weg, damit
+  // erst gar keine Erwartung entsteht, hier wäre doch eine Wahl möglich.
+  hideReroll,
   onConfirm,
   onReroll,
   busy,
@@ -67,14 +71,16 @@ export default function DrawDialog({
             </div>
 
             <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.rerollButton}
-                onClick={onReroll}
-                disabled={busy || noAlternative}
-              >
-                Neu auslosen
-              </button>
+              {!hideReroll && (
+                <button
+                  type="button"
+                  className={styles.rerollButton}
+                  onClick={onReroll}
+                  disabled={busy || noAlternative}
+                >
+                  Neu auslosen
+                </button>
+              )}
               <button type="button" className={styles.confirmButton} onClick={onConfirm} disabled={busy}>
                 Bestätigen
               </button>

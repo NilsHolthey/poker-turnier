@@ -18,6 +18,12 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "Ungültiger Move-Vorschlag" }, { status: 400 });
   }
 
-  const nextProposal = await rerollMove(new ObjectId(tournamentId), proposal, excludeIds ?? []);
-  return NextResponse.json({ proposal: nextProposal });
+  try {
+    const nextProposal = await rerollMove(new ObjectId(tournamentId), proposal, excludeIds ?? []);
+    return NextResponse.json({ proposal: nextProposal });
+  } catch (err) {
+    // Fängt u.a. den simpleMode-Guard in rerollMove() ab (siehe dort) - eine
+    // saubere 400-JSON-Antwort statt eines unbehandelten 500ers.
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
 }

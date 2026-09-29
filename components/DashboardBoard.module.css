@@ -27,6 +27,22 @@
      some animation and transition") - dieselbe Keyframe wie überall sonst in
      der App (app/globals.css). */
   animation: content-fade-in 0.3s ease;
+  /* Für .pageFinale unten - weiches Abdunkeln statt eines harten Umschlags
+     beim Phasenwechsel. */
+  transition: background-color 1s ease;
+}
+
+/* Chat-Wunsch: "if final table is reached ... background gets slightly
+   darker and the table should get a golden glow" - reine Zusatzklasse statt
+   die .page-Grundfarbe zu ändern, damit Vorrunde/Halbfinale unverändert
+   bleiben. Der goldene Glow selbst sitzt an der Kapsel, siehe
+   MiniTable.module.css .finale. */
+.pageFinale {
+  background-color: rgba(0, 0, 0, 0.4);
+  /* Chat-Wunsch: "very subtle golden gradient to background color" - separates
+     background-image statt Teil von .page's transitionierter background-color,
+     ein sanfter Radial-Schimmer von oben statt eines flächigen Farbtons. */
+  background-image: radial-gradient(ellipse 90% 60% at 50% 0%, rgba(163, 133, 96, 0.07), transparent 65%);
 }
 
 /* 1fr 3fr 1fr statt fester Pixelbreiten für die Seitenspalten (Chat: "use
@@ -66,11 +82,12 @@
      nur mittig mit eigener Inhaltsgröße zu sitzen. */
   align-items: stretch;
   justify-content: center;
-  /* Dieser Wert (12px) MUSS mit ROW_GAP in DashboardBoard.js übereinstimmen -
-     computeCapsuleSize() dort rechnet die pro-Tisch-Breite (inkl. Puffer für
-     seitlich überstehende Sitze, siehe MiniTable.js) exakt gegen diesen Gap
-     aus. Eine Änderung hier ohne die Konstante dort anzupassen würde die
-     JS-berechnete Größe wieder von der echten Layout-Breite abweichen lassen. */
+  /* Nur noch Fallback für den ersten Render, bevor der ResizeObserver misst -
+     DashboardBoard.js setzt gap ab dann per Inline-Style (rowGap, ROW_GAP
+     oder phasenabhängig HF_ROW_GAP für "more spacing between the tables" auf
+     HF), das gewinnt gegenüber diesem Wert. Trotzdem gleich zu ROW_GAP
+     halten, damit computeCapsuleSize()'s Breiten-Budget für diesen ersten
+     Render nicht von der tatsächlich gerenderten Lücke abweicht. */
   gap: 12px;
   min-height: 0;
   /* Reihe mit weniger Tischen als die längste Reihe des Layouts wird
@@ -116,8 +133,30 @@
   min-height: 0;
   padding: 16px;
   border-radius: 16px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  /* Dunkler statt nur eines leichten weißen Glas-Schimmers (Chat-Wunsch:
+     "make the background darker ... currently hard to read", zuerst für die
+     Spielerliste, gilt aber für alle .panel-Nutzer). Die beiden weißen
+     rgba-Werte allein waren schon fast durchsichtig - "dunkler" heißt hier
+     nicht "noch weniger Weiß" (kaum sichtbarer Unterschied), sondern eine
+     eigene dunkle Grundfläche zusätzlich zum Schimmer, damit der helle Text
+     wirklich Kontrast bekommt. */
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 1s ease;
+}
+
+/* Chat-Wunsch: "also the borders of the other cells now should be golden" /
+   "on the cells?" (subtiler goldener Gradient auch auf den Panels, nicht nur
+   auf .page) - .pageFinale und .panel sind beide lokale Klassen in DIESEM
+   CSS-Modul, ein normaler Nachkommen-Selektor reicht also (CSS Modules
+   hasht beide konsistent) - kein :global nötig, .panel liegt einfach tief
+   verschachtelt innerhalb von .page/.pageFinale. Radial-Gradient als
+   zusätzliche oberste Ebene VOR den bestehenden .panel-Hintergrundebenen
+   (Glas-Schimmer + dunkle Grundfläche), die bleiben darunter erhalten. */
+.pageFinale .panel {
+  border-color: rgba(163, 133, 96, 0.6);
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgba(163, 133, 96, 0.06), transparent 70%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), rgba(0, 0, 0, 0.35);
 }
 
 /* Proportionale flex-Anteile statt fester vh-Werte (Chat: "we need to work
@@ -201,6 +240,14 @@
   color: var(--text);
   /* Farbwechsel, wenn Rebuy endet (grün -> rot), weich statt abrupt. */
   transition: color 0.4s ease;
+}
+
+/* Chat-Wunsch: "admin should have more control over the blindes and timer so
+   pausing it should be a possibility" - ohne diesen Hinweis würde ein
+   eingefrorener Countdown auf dem TV-Dashboard einfach wie ein Hänger
+   aussehen statt wie ein bewusster Zustand. */
+.infoValuePaused {
+  color: var(--accent);
 }
 
 .rebuyOn .infoValue {
@@ -304,7 +351,7 @@
 .playerRow {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 2px;
   padding: 4px;
   margin-bottom: 2px;
   border-radius: 8px;
@@ -377,7 +424,7 @@
 
 .playerTable {
   flex-shrink: 0;
-  width: 22px;
+  width: 15px;
   text-align: center;
   font-weight: 700;
   font-size: 0.5rem;

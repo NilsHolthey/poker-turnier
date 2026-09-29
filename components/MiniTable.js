@@ -29,12 +29,24 @@ const DEFAULT_CAPSULE_SIZE = { width: 60, height: 80, slotWidth: 70 };
 // alle auf denselben Punkt fielen). Circle/Name-Maße werden hier direkt als
 // Anteil der Kapselbreite abgeleitet, damit sie IMMER proportional
 // mitskalieren statt an einem eigenen vh/cqh-Minimum hängenzubleiben.
-export default function MiniTable({ table, players, active = true, capsuleSize }) {
+// scale (Chat-Wunsch: "make the table and seats etc smaller on hf ... also
+// the player circles") - wird EXTRA auf die Min/Max-Klammern von
+// Kreis-/Schriftgrößen angewendet statt sich nur auf die (bereits skalierte)
+// capsuleWidth zu verlassen: capsuleWidth * 0.28 konnte sonst am festen
+// 12px-Minimum hängenbleiben und die Kreise blieben trotz kleinerer Kapsel
+// gleich groß - mit skalierten Klammern verschiebt sich die ganze Bandbreite
+// mit runter, echtes Schrumpfen garantiert statt nur "möglich, falls über
+// dem Minimum".
+// finale (Chat-Wunsch: "if final table is reached ... the table should get a
+// golden glow") - nur an, wenn tournament.phaseIndex === 2 (siehe
+// DashboardBoard.js); gilt dann für alle Tische auf einmal (bei Finale
+// normalerweise ohnehin nur noch einer aktiv).
+export default function MiniTable({ table, players, active = true, capsuleSize, scale = 1, finale = false }) {
   const positions = SEAT_POSITIONS[table.maxSeats];
   const ordinal = tableOrdinalFromLabel(table.label);
   const { width: capsuleWidth, height: capsuleHeight, slotWidth } = capsuleSize || DEFAULT_CAPSULE_SIZE;
 
-  const circleDiameter = Math.max(12, Math.min(46, capsuleWidth * 0.28));
+  const circleDiameter = Math.max(12 * scale, Math.min(46 * scale, capsuleWidth * 0.28));
   const circleFontSize = circleDiameter * 0.4;
   const nameFontSize = circleDiameter * 0.34;
   const nameMaxWidth = capsuleWidth * 1.05;
@@ -43,7 +55,7 @@ export default function MiniTable({ table, players, active = true, capsuleSize }
   // are still behind the table/player, we do not have the space") - jetzt
   // einfach die Tischnummer mittig IN der Kapsel, dort ist ohnehin freie
   // Fläche (die Spieler sitzen alle außerhalb am Rand, siehe SEAT_POSITIONS).
-  const centerFontSize = Math.max(10, Math.min(26, capsuleWidth * 0.32));
+  const centerFontSize = Math.max(10 * scale, Math.min(26 * scale, capsuleWidth * 0.32));
 
   return (
     // width: slotWidth statt nur der (absichtlich kleineren) Kapselbreite -
@@ -57,7 +69,7 @@ export default function MiniTable({ table, players, active = true, capsuleSize }
     >
       {positions ? (
         <div
-          className={styles.capsule}
+          className={`${styles.capsule} ${finale && active ? styles.finale : ""}`}
           style={{
             width: `${capsuleWidth}px`,
             height: `${capsuleHeight}px`,

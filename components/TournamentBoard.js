@@ -26,6 +26,8 @@ import {
   endPhase,
   setBlindLevelIndex,
   startBlindClock,
+  pauseBlindClock,
+  resumeBlindClock,
   mergeTable,
 } from "@/lib/client/api";
 import { PHASES } from "@/lib/constants";
@@ -60,8 +62,13 @@ function buildDrawViewModel(proposal, state, rejectedIds) {
       fromColor: fromTable?.color,
       toLabel: toTable?.label,
       toColor: toTable?.color,
-      canReroll: !!proposal.toTableId && rejectedIds.length + 1 < candidatePool.length,
+      // simpleMode (Chat-Wunsch: "operators should not accept and reroll,
+      // this could get abused") - überschreibt canReroll fest auf false,
+      // ganz unabhängig davon, ob rein rechnerisch noch eine Alternative
+      // übrig wäre.
+      canReroll: !proposal.simpleMode && !!proposal.toTableId && rejectedIds.length + 1 < candidatePool.length,
       noAlternative: !proposal.toTableId,
+      hideReroll: !!proposal.simpleMode,
     };
   }
 
@@ -79,6 +86,7 @@ function buildDrawViewModel(proposal, state, rejectedIds) {
     toColor: toTable?.color,
     canReroll: !!proposal.playerId && rejectedIds.length + 1 < candidatePool.length,
     noAlternative: !proposal.playerId,
+    hideReroll: false,
   };
 }
 
@@ -111,6 +119,13 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   const [confirmRemovePlayer, setConfirmRemovePlayer] = useState(null);
   const [confirmEndPhase, setConfirmEndPhase] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  // Chat-Wunsch: "add an alert for halbfinale reached ... not an automatic
+  // start, but a push notification and popup. still admin triggers start." -
+  // rein informatives Popup, kein Gate: einmal angezeigt/weggeklickt, kommt
+  // es innerhalb derselben Sitzung nicht erneut (kein Nerv-Popup bei jedem
+  // 8s-Poll), unabhängig vom serverseitigen Push-Dedup-Flag
+  // (halbfinaleReadyAlertSent in tournamentEngine.js).
+  const [hfReadyDismissed, setHfReadyDismissed] = useState(false);
   // Kurzer Hinweis-Toast, wenn ein Operator einen Spieler an einem fremden
   // Tisch entfernen will (Chat-Wunsch). id sorgt dafür, dass ein zweiter Tap
   // innerhalb der Anzeigedauer den Toast neu startet.
@@ -155,6 +170,73 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     setTimeout(() => setDrawPhase("confirm"), ROLLING_DURATION_MS);
   }
 
+  // Chat-Wunsch: "if a table gets resolved on einfacher modus only show the
+  // overview popup with all three players with confirmation not confirming
+  // each" - für simpleMode-Auflösungen kein DrawDialog pro Spieler mehr
+  // (der Dialog war dort ohnehin nur noch ein Bestätigungs-Tap ohne echte
+  // Wahl, siehe DrawDialog.js hideReroll). Bestätigt die ganze Kette
+  // automatisch im Hintergrund (dieselbe confirmMove()-Logik wie ein
+  // manueller Tap, nur ohne Dialog dazwischen) und zeigt erst am Ende EIN
+  // Übersichts-Popup (DissolveOverview) - dieselbe Komponente/dasselbe
+  // "wer wohin"-Format wie im Normalmodus, nur ohne die Zwischenschritte.
+  async function autoApplySimpleDissolve(action, currentData) {
+    const vm = buildDrawViewModel(action, currentData, []);
+    const fromId = action.dissolvedTableId;
+    const playerId = action.playerId;
+
+    const { pendingAction: next } = await confirmMove(tournamentId, action);
+    const data = await reload();
+
+    // Gleiches Tisch-Aufblitzen wie im Normalmodus (Chat: kein eigener
+    // Bestätigungs-Tap mehr nötig, das FYI-Signal für die betroffenen Tische
+    // soll trotzdem weiter kommen).
+    setSignal({
+      fromTableId: fromId,
+      toTableId: action.toTableId,
+      text: `${vm?.playerNum ?? "?"} setzt um zu ${vm?.toLabel ?? "?"}`,
+    });
+    setTimeout(() => setSignal(null), ROLLING_DURATION_MS);
+
+    dissolveLogRef.current.push({
+      name: vm?.playerName,
+      isBank: vm?.playerIsBank,
+      fromNum: vm?.playerNum,
+      newNum: data.players.find((p) => p._id === playerId)?.num,
+      toLabel: vm?.toLabel,
+      toColor: vm?.toColor,
+    });
+    if (!data.tables.some((t) => t._id === fromId)) setActiveTableId(action.toTableId);
+
+    const sameDissolveContinues = next?.simpleMode && next.type === "dissolve" && next.dissolvedTableId === fromId;
+    if (sameDissolveContinues) {
+      await autoApplySimpleDissolve(next, data);
+      return;
+    }
+
+    const moves = dissolveLogRef.current;
+    dissolveLogRef.current = [];
+    setDissolveOverview({ tableLabel: vm?.fromLabel, moves, nextAction: next });
+  }
+
+  // Ersetzt die direkten startDraw()-Aufrufe an allen Stellen, die eine neue
+  // pendingAction bekommen könnten - leitet simpleMode-Auflösungen automatisch
+  // durch, alles andere (Normalmodus, manuelles Zusammenlegen) zeigt weiter
+  // den normalen DrawDialog. Async und OHNE eigenes runAction() - die Aufrufer
+  // stehen bereits in ihrem eigenen runAction()-Block, ein zweites,
+  // ungewartetes runAction() hier würde busy/error-State vorzeitig
+  // zurücksetzen, während die Auflösungs-Kette im Hintergrund noch läuft.
+  // currentData: die frisch von reload() zurückgegebenen Daten des Aufrufers
+  // statt des möglicherweise noch nicht neu gerenderten state (React-State-
+  // Updates sind nicht synchron) - fällt auf state zurück, falls ein Aufrufer
+  // keine frischen Daten zur Hand hat (z.B. closeDissolveOverview).
+  async function processPendingAction(action, currentData) {
+    if (action?.simpleMode && action.type === "dissolve") {
+      await autoApplySimpleDissolve(action, currentData ?? state);
+      return;
+    }
+    startDraw(action);
+  }
+
   async function runAction(fn) {
     setBusy(true);
     setError(null);
@@ -187,8 +269,8 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     if (!playerId) return;
     runAction(async () => {
       const { pendingAction: next } = await removePlayer(tournamentId, playerId);
-      await reload();
-      if (next) startDraw(next);
+      const data = await reload();
+      if (next) await processPendingAction(next, data);
     });
   }
 
@@ -276,7 +358,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
         setDrawPhase(null);
         setDissolveOverview({ tableLabel: vm?.fromLabel, moves, nextAction: next });
       } else if (next) {
-        startDraw(next);
+        await processPendingAction(next, data);
       } else {
         setPendingAction(null);
         setDrawPhase(null);
@@ -287,7 +369,11 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   function closeDissolveOverview() {
     const next = dissolveOverview?.nextAction;
     setDissolveOverview(null);
-    if (next) startDraw(next);
+    // runAction() hier (statt in autoApplySimpleDissolve selbst, siehe
+    // processPendingAction) - kein frisches reload()-Ergebnis an dieser
+    // Stelle zur Hand, state ist zu diesem (späteren, durch einen Klick
+    // ausgelösten) Zeitpunkt aber sicher schon aktuell.
+    if (next) runAction(() => processPendingAction(next, state));
   }
 
   function handleReroll() {
@@ -318,6 +404,25 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     });
   }
 
+  // Chat-Wunsch: "admin should have more control over the blindes and timer
+  // so pausing it should be a possibility ... especially before hf and
+  // finale table we should pause, no auto pause but possibility for admin" -
+  // rein manuell per Toggle in BlindPill, kein automatisches Pausieren bei
+  // Phasenübergängen.
+  function handlePauseBlindClock() {
+    runAction(async () => {
+      await pauseBlindClock(tournamentId);
+      await reload();
+    });
+  }
+
+  function handleResumeBlindClock() {
+    runAction(async () => {
+      await resumeBlindClock(tournamentId);
+      await reload();
+    });
+  }
+
   function handleEndPhase() {
     setConfirmEndPhase(true);
   }
@@ -333,8 +438,8 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     if (!tableId) return;
     runAction(async () => {
       const { pendingAction: next } = await mergeTable(tournamentId, tableId);
-      await reload();
-      if (next) startDraw(next);
+      const data = await reload();
+      if (next) await processPendingAction(next, data);
     });
   }
 
@@ -366,6 +471,13 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     tableLabel: tables.find((t) => t._id === p.tableId)?.label,
   }));
   const hasNextPhase = tournament.phaseIndex < PHASES.length - 1;
+  // Chat-Wunsch: "add an alert for halbfinale reached" - state.tables enthält
+  // laut .../state/route.js schon nur aktive Tische der aktuellen Phase,
+  // also reicht die reine Länge. Nur in der Vorrunde relevant, nur für
+  // admin sichtbar (nur admin darf die Phase überhaupt starten).
+  const hfTargetTables = tournament.phasePlans?.[1]?.targetTables ?? PHASES[1].targetTables;
+  const hfReady =
+    user?.role === "admin" && tournament.phaseIndex === 0 && tables.length <= hfTargetTables && !hfReadyDismissed;
   const rebuyActive = isRebuyPhaseActive(tournament.config, tournament.blindSchedule);
   // Chat-Wunsch: operator darf nur den eigenen Tisch verwalten (sonst könnten
   // Spieler an fremden Tischen umbenannt/entfernt werden) - die eigentliche
@@ -449,6 +561,8 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           isAdmin={user?.role === "admin"}
           onAdvance={handleAdvanceBlindLevel}
           onStart={handleStartBlindClock}
+          onPause={handlePauseBlindClock}
+          onResume={handleResumeBlindClock}
           onEdit={() => setShowBlindSchedule(true)}
           busy={busy}
         />
@@ -596,6 +710,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           toLabel={drawViewModel.toLabel}
           toColor={drawViewModel.toColor}
           noAlternative={drawViewModel.noAlternative}
+          hideReroll={drawViewModel.hideReroll}
           onConfirm={handleConfirm}
           onReroll={handleReroll}
           busy={busy}
@@ -628,6 +743,24 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           confirmLabel="Beenden"
           onConfirm={confirmEndPhaseAction}
           onCancel={() => setConfirmEndPhase(false)}
+        />
+      )}
+
+      {/* Chat-Wunsch: "add an alert for halbfinale reached ... not an
+          automatic start, but a push notification and popup. still admin
+          triggers start." - "Jetzt starten" öffnet nur den ohnehin schon
+          vorhandenen Bestätigungsdialog (confirmEndPhase), startet also
+          NICHT selbst automatisch etwas. */}
+      {hfReady && !confirmEndPhase && (
+        <ConfirmDialog
+          message={`Nur noch ${tables.length} Tisch${tables.length === 1 ? "" : "e"} aktiv - Halbfinale kann gestartet werden.`}
+          confirmLabel="Jetzt starten"
+          cancelLabel="Später"
+          onConfirm={() => {
+            setHfReadyDismissed(true);
+            handleEndPhase();
+          }}
+          onCancel={() => setHfReadyDismissed(true)}
         />
       )}
 

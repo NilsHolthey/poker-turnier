@@ -128,6 +128,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Chat-Wunsch: "admin should have more control over the blindes and timer so
+   pausing it should be a possibility" - deutlich sichtbar statt nur am
+   stehenden Wert erkennbar (der ändert sich ja gerade NICHT mehr). */
+.timerPaused {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .nextRow {
   display: flex;
   align-items: center;
@@ -195,4 +203,29 @@
   border-radius: 50%;
   background: var(--accent);
   vertical-align: middle;
+}
+
+/* Gleiche Form wie .notStartedDot, eigene Klasse statt Wiederverwendung -
+   beide könnten sich künftig unabhängig weiterentwickeln (z.B. eine Farbe/
+   Animation nur fürs Pausiert-Signal), auch wenn sie aktuell identisch
+   aussehen. */
+.pausedDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+/* Für den ▶-Fortsetzen-Button im pausierten Zustand - dieselbe Optik wie
+   .startButton (gefüllt statt nur Outline), damit "hier geht's weiter" auf
+   den ersten Blick auffällt statt wie die anderen neutralen Icon-Buttons
+   auszusehen. */
+.resumeButton {
+  background: var(--gradient-accent);
+  color: #04140c;
+  font-weight: 700;
+  border-color: transparent;
 }
