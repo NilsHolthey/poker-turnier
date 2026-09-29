@@ -33,19 +33,27 @@ const BUST_TICKER_MS = 60000;
 // Polling erreicht dasselbe "zieht von selbst nach" ganz ohne dieses Risiko.
 const POLL_MS = 4000;
 
+// mm:ss statt hh:mm:ss (Chat-Wunsch: "for remaining time of blind level mm:ss
+// is fine no need for hh since they are usually only 60 or 30 min") - ein
+// Blind-Level dauert nie eine Stunde oder länger, die führende "00:"-Stunde
+// wäre nur totes Gewicht.
 function formatHMS(ms) {
   const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatHM(ms) {
   const totalMinutes = Math.floor(ms / 60000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  // "h"-Suffix (Chat-Wunsch: "we should add an H so we know unit") - ohne
+  // Einheit liest sich "1:23" leicht wie mm:ss statt hh:mm, gerade neben
+  // der Blind-Restzeit (formatHMS), die im selben mm:ss-Look daherkommt.
+  // Stunden ohne führende Null (Chat: "never gonna be 10h") - Rebuy-Phasen
+  // sind nie so lang, dass zweistellige Stunden vorkämen.
+  return `${hours}:${String(minutes).padStart(2, "0")}h`;
 }
 
 // Handverlesene, symmetrische Zeilenaufteilung statt frei umbrechendem Grid
@@ -96,22 +104,34 @@ function chunkTablesIntoRows(tables) {
 // keine Prozent-/aspect-ratio-Auflösung mehr nötig, die querschießen könnte.
 const CAPSULE_ASPECT = 0.6; // Breite/Höhe, 3:5 wie TableCapsule
 const ROWS_GAP = 20; // muss zu .tablesArea gap passen (DashboardBoard.module.css)
-const ROW_GAP = 12; // muss zu .tableRow gap passen
+const ROW_GAP = 12; // muss zu .tableRow gap passen (Standardwert, siehe HF_ROW_GAP unten)
+// Chat-Wunsch: "more spacing between the tables" auf HF - eigener, größerer
+// Gap-Wert nur für diese Phase statt den globalen ROW_GAP zu ändern. Wird
+// unten sowohl in computeCapsuleSize (Breiten-Budget) ALS AUCH als
+// tatsächlicher CSS-gap auf .tableRow verwendet, damit Rechnung und
+// Darstellung übereinstimmen (dieselbe Kopplung wie ROW_GAP/.tableRow gap).
+const HF_ROW_GAP = 60;
 const LABEL_RESERVE = 22; // px für Tischname über der Kapsel
 const VERTICAL_SEAT_BUFFER = 34; // px Puffer über/unter der Kapsel für oben/unten überstehende Sitze
 const LATERAL_OVERFLOW_FACTOR = 1.3; // Kapselbreite * Faktor = Platzbedarf inkl. seitlich überstehender Sitze
 
-function computeCapsuleSize(tablesAreaSize, rowCount, maxRowLen) {
+// scale (Chat-Wunsch: "make the table and seats etc smaller on hf on
+// dashboard, by a third") - HF hat per Default nur 2 Tische in 1 Zeile, die
+// normale "weniger Tische = mehr Platz pro Tisch"-Logik oben macht sie
+// dadurch schon von selbst größer als in der Vorrunde; skaliert hier gezielt
+// wieder runter, statt die Kernformel für alle Phasen zu verändern.
+// rowGap parametrisiert statt fest ROW_GAP (siehe HF_ROW_GAP oben).
+function computeCapsuleSize(tablesAreaSize, rowCount, maxRowLen, scale = 1, rowGap = ROW_GAP) {
   if (!tablesAreaSize || !tablesAreaSize.width || !tablesAreaSize.height || !rowCount || !maxRowLen) return null;
 
   const rowHeight = (tablesAreaSize.height - (rowCount - 1) * ROWS_GAP) / rowCount;
   const heightBudget = Math.max(28, rowHeight - LABEL_RESERVE - VERTICAL_SEAT_BUFFER);
 
-  const perTableWidth = (tablesAreaSize.width - (maxRowLen - 1) * ROW_GAP) / maxRowLen;
+  const perTableWidth = (tablesAreaSize.width - (maxRowLen - 1) * rowGap) / maxRowLen;
   const widthBudget = Math.max(20, perTableWidth / LATERAL_OVERFLOW_FACTOR);
 
   const heightFromWidthBudget = widthBudget / CAPSULE_ASPECT;
-  const capsuleHeight = Math.min(heightBudget, heightFromWidthBudget);
+  const capsuleHeight = Math.min(heightBudget, heightFromWidthBudget) * scale;
   const capsuleWidth = capsuleHeight * CAPSULE_ASPECT;
 
   // slotWidth statt nur capsuleWidth an den Wrapper geben (Bugfix: die
@@ -121,8 +141,14 @@ function computeCapsuleSize(tablesAreaSize, rowCount, maxRowLen) {
   // diese Breite tatsächlich einnimmt. Ohne das würde der Wrapper nur so
   // breit wie die (bewusst verkleinerte) Kapsel, der "reservierte" Rest
   // existiert nirgends im echten Layout und die Sitze überlappen den
-  // Nachbartisch trotzdem.
-  return { width: Math.round(capsuleWidth), height: Math.round(capsuleHeight), slotWidth: Math.round(perTableWidth) };
+  // Nachbartisch trotzdem. Auch slotWidth wird mit skaliert, damit der
+  // kleinere Tisch nicht in einem gleich großen (jetzt zu großen) Slot mit
+  // viel Leerraum drumherum landet.
+  return {
+    width: Math.round(capsuleWidth),
+    height: Math.round(capsuleHeight),
+    slotWidth: Math.round(perTableWidth * scale),
+  };
 }
 
 export default function DashboardBoard({ tournamentId, initialState }) {
@@ -228,13 +254,27 @@ export default function DashboardBoard({ tournamentId, initialState }) {
   } else if (effective && !effective.started) {
     tickerMessages.push(`Turnier noch nicht gestartet - startet um ${schedule.startTime} Uhr`);
   }
-  const recentBusts = players
-    .filter((p) => p.status !== "active" && p.bustedAt && now - new Date(p.bustedAt).getTime() < BUST_TICKER_MS)
+  // Chat-Wunsch: "last bust plus sentence should stay ... it should not
+  // jump back to only the players fighting" - bustedPlayers/recentBusts wie
+  // vorher (alle Busts der letzten BUST_TICKER_MS zeigen), ABER der zuletzt
+  // gebustete Spieler bleibt danach trotzdem in der Rotation, statt nach
+  // Ablauf des 60s-Fensters ganz zu verschwinden und den Ticker auf die
+  // reine "X kämpfen noch"-Füllmeldung zurückfallen zu lassen, sobald mal
+  // eine Weile niemand mehr aussteigt.
+  const bustedPlayers = players
+    .filter((p) => p.status !== "active" && p.bustedAt)
     .sort((a, b) => new Date(b.bustedAt).getTime() - new Date(a.bustedAt).getTime());
-  for (const p of recentBusts) {
+  const recentBusts = bustedPlayers.filter((p) => now - new Date(p.bustedAt).getTime() < BUST_TICKER_MS);
+  const bustsToShow = recentBusts.length > 0 ? recentBusts : bustedPlayers.slice(0, 1);
+  for (const p of bustsToShow) {
     const taunt = pickTauntSentence(activePlayers.length, p._id);
     tickerMessages.push(`${p.name} wurde gebustet! ${taunt}`);
   }
+  // Chat-Wunsch: "some kind of highlight on the news banner if a player
+  // busts" - dieselbe JUST_BUSTED_MS-Zeitspanne wie das rote Aufblitzen in
+  // der Spielerliste (siehe isJustBusted oben), damit beide Effekte
+  // synchron ablaufen statt unabhängig verschieden lang zu laufen.
+  const tickerJustBusted = bustedPlayers.length > 0 && now - new Date(bustedPlayers[0].bustedAt).getTime() < JUST_BUSTED_MS;
   // Nur zeigen, wenn die Blind-Uhr wirklich läuft (Chat-Wunsch: "the players
   // fighting part only after tournament started") - vorher steht ja schon
   // die "Turnier noch nicht gestartet"-Meldung oben.
@@ -242,12 +282,19 @@ export default function DashboardBoard({ tournamentId, initialState }) {
     tickerMessages.push(`${activePlayers.length} Spieler kämpfen noch um die Plätze`);
   }
 
+  // phaseIndex 2 = PHASES[2] = Finale (siehe lib/constants.js) - einmal hier
+  // auf Komponentenebene statt lokal in der Tische-IIFE unten, wird jetzt
+  // auch für den abgedunkelten Hintergrund gebraucht (Chat-Wunsch: "if final
+  // table is reached ... background gets slightly darker and the table
+  // should get a golden glow").
+  const isFinale = tournament.phaseIndex === 2;
+
   return (
     // Kein <header> mehr (Chat: "remove the header for now, we do not need a
     // title or a full screen button, we will open as PWA and AirPlay from
     // iPad") - im PWA-Standalone-Modus gibt es ohnehin keine Browser-Chrome
     // mehr, ein eigener Vollbild-Button ist damit überflüssig.
-    <main className={styles.page}>
+    <main className={`${styles.page} ${isFinale ? styles.pageFinale : ""}`}>
       {/* Chat-Wunsch: "player list on the left side, blindes on the right
           side" - Tische bleiben in der Mitte als Hauptfläche, die beiden
           Listen rahmen sie links/rechts statt zusammen in einer Sidebar zu
@@ -310,12 +357,20 @@ export default function DashboardBoard({ tournamentId, initialState }) {
         <div ref={tablesAreaRef} className={styles.tablesArea} style={{ "--row-count": tableRows.length }}>
           {(() => {
             const maxRowLen = Math.max(...tableRows.map((r) => r.length));
-            const capsuleSize = computeCapsuleSize(tablesAreaSize, tableRows.length, maxRowLen);
+            // Chat-Wunsch: "make the table and seats etc smaller on hf on
+            // dashboard, by a third ... also the player circles and more
+            // spacing between the tables" / "final table needs to be shrunk
+            // in size by 50%" - phaseIndex 1 = PHASES[1] = Halbfinale.
+            // isFinale kommt jetzt von Komponentenebene oben.
+            const isHf = tournament.phaseIndex === 1;
+            const capsuleScale = isHf ? 2 / 3 : isFinale ? 0.5 : 1;
+            const rowGap = isHf ? HF_ROW_GAP : ROW_GAP;
+            const capsuleSize = computeCapsuleSize(tablesAreaSize, tableRows.length, maxRowLen, capsuleScale, rowGap);
             return tableRows.map((rowTables, i) => (
               <div
                 key={i}
                 className={styles.tableRow}
-                style={{ "--row-width-ratio": rowTables.length / maxRowLen }}
+                style={{ "--row-width-ratio": rowTables.length / maxRowLen, gap: `${rowGap}px` }}
               >
                 {rowTables.map((table) => (
                   <MiniTable
@@ -324,6 +379,8 @@ export default function DashboardBoard({ tournamentId, initialState }) {
                     players={activePlayers.filter((p) => p.tableId === table._id)}
                     active={table.active}
                     capsuleSize={capsuleSize}
+                    scale={capsuleScale}
+                    finale={isFinale}
                   />
                 ))}
               </div>
@@ -369,9 +426,9 @@ export default function DashboardBoard({ tournamentId, initialState }) {
                 <span className={styles.infoValue}>{nextLevel ? formatBlindLevel(nextLevel) : "Ende"}</span>
               </div>
               <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Verbleibend</span>
-                <span className={styles.infoValue}>
-                  {effective.started ? formatHMS(effective.remainingMs) : "--:--:--"}
+                <span className={styles.infoLabel}>{effective.paused ? "Pausiert bei" : "Verbleibend"}</span>
+                <span className={`${styles.infoValue} ${effective.paused ? styles.infoValuePaused : ""}`}>
+                  {effective.started ? formatHMS(effective.remainingMs) : "--:--"}
                 </span>
               </div>
             </section>
@@ -379,7 +436,7 @@ export default function DashboardBoard({ tournamentId, initialState }) {
         </div>
       </div>
 
-      <NewsTicker messages={tickerMessages} />
+      <NewsTicker messages={tickerMessages} alert={tickerJustBusted} />
     </main>
   );
 }

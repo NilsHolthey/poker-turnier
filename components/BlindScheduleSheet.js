@@ -5,26 +5,48 @@ import { setBlindSchedule } from "@/lib/client/api";
 import Sheet from "./Sheet";
 import styles from "./BlindScheduleSheet.module.css";
 
+// Chat-Wunsch: "grab the currently stored values for blinds and set it as
+// default, it's probably not gonna change" - reale Struktur aus dem
+// bisherigen Turnier übernommen statt eines leeren Platzhalter-Levels, damit
+// admin sie für künftige Turniere nicht jedes Mal neu eintippen muss. Wer
+// abweichende Werte braucht, kann sie hier trotzdem jederzeit überschreiben.
+const DEFAULT_START_TIME = "15:00";
+const DEFAULT_LEVELS = [
+  { smallBlind: 25, bigBlind: 50, durationMinutes: 60, isBreak: false },
+  { smallBlind: 50, bigBlind: 100, durationMinutes: 60, isBreak: false },
+  { smallBlind: 100, bigBlind: 200, durationMinutes: 60, isBreak: false },
+  { smallBlind: 200, bigBlind: 400, durationMinutes: 30, isBreak: false },
+  { smallBlind: 0, bigBlind: 0, durationMinutes: 90, isBreak: true },
+  { smallBlind: 400, bigBlind: 800, durationMinutes: 60, isBreak: false },
+  { smallBlind: 800, bigBlind: 1600, durationMinutes: 60, isBreak: false },
+  { smallBlind: 2000, bigBlind: 4000, durationMinutes: 60, isBreak: false },
+  { smallBlind: 3000, bigBlind: 6000, durationMinutes: 60, isBreak: false },
+  { smallBlind: 4000, bigBlind: 8000, durationMinutes: 60, isBreak: false },
+  { smallBlind: 5000, bigBlind: 10000, durationMinutes: 60, isBreak: false },
+];
+const DEFAULT_REBUY_END_LEVEL_INDEX = 4;
+
 function initialLevels(schedule) {
   if (schedule?.levels?.length) {
     return schedule.levels.map((l) => ({ ...l }));
   }
-  return [{ smallBlind: "", bigBlind: "", durationMinutes: 60, isBreak: false }];
+  return DEFAULT_LEVELS.map((l) => ({ ...l }));
 }
 
 // Admin-Sheet zum (Neu-)Anlegen der Blindstruktur: ein Formularfeld-Set pro
 // Level statt eines Bulk-Textfelds (spec-Wunsch: "nicht ein riesiges
 // Textfeld"). Hülle/Animation über Sheet (oben hängend, Tastatur-Problem).
 export default function BlindScheduleSheet({ tournamentId, schedule, onClose, onSaved }) {
-  const [startTime, setStartTime] = useState(schedule?.startTime ?? "15:00");
+  const [startTime, setStartTime] = useState(schedule?.startTime ?? DEFAULT_START_TIME);
   const [levels, setLevels] = useState(() => initialLevels(schedule));
   // "Kein Ende" ist bewusst keine wählbare Option mehr (Chat: "we will always
   // have a defined rebuy phase") - ohne gespeicherten Wert defaultet die
-  // Auswahl auf das letzte Level, statt eine leere/undefinierte Auswahl zu
-  // zeigen. Der Rest der Kette (Schema, isRebuyPhaseActive) unterstützt null
-  // weiterhin, für ältere Turniere, die das Feld noch nie gesetzt haben.
+  // Auswahl auf DEFAULT_REBUY_END_LEVEL_INDEX (die reale, bisher genutzte
+  // Einstellung) statt auf das letzte Level. Der Rest der Kette (Schema,
+  // isRebuyPhaseActive) unterstützt null weiterhin, für ältere Turniere, die
+  // das Feld noch nie gesetzt haben.
   const [rebuyEndLevelIndex, setRebuyEndLevelIndex] = useState(() =>
-    schedule?.rebuyEndLevelIndex != null ? String(schedule.rebuyEndLevelIndex) : String(levels.length)
+    schedule?.rebuyEndLevelIndex != null ? String(schedule.rebuyEndLevelIndex) : String(DEFAULT_REBUY_END_LEVEL_INDEX)
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);

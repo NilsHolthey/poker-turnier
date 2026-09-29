@@ -22,6 +22,57 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
+  /* Für den Shimmer-Sweep unten (.alert::after) - hält den Verlauf innerhalb
+     der abgerundeten Ecken statt darüber hinauszuragen. */
+  overflow: hidden;
+  transition: border-color 0.6s ease;
+}
+
+/* Chat-Wunsch: "some kind of highlight on the news banner if a player
+   busts, like flash going around the border or red shimmer going left to
+   right" - Kombination aus beidem: ein pulsierender roter Rand/Glow (gleiche
+   Ring-Technik wie .playerJustBusted in DashboardBoard.module.css, für
+   Konsistenz) PLUS ein Lichtstreifen, der einmal über das Banner läuft.
+   .alert bleibt so lange gesetzt wie DashboardBoard.js' tickerJustBusted
+   (6s, dieselbe Zeitspanne wie das rote Aufblitzen in der Spielerliste) -
+   beide Keyframes sind aber bewusst kürzer und laufen nur 2x, statt die
+   ganzen 6s durchzuhalten, damit es ein kurzes "Aufblitzen" bleibt statt
+   eines Dauerzustands. */
+.alert {
+  border-color: rgba(209, 66, 95, 0.7);
+  animation: ticker-alert-glow 3s ease-out 2;
+}
+
+.alert::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 35%, rgba(209, 66, 95, 0.4) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: ticker-shimmer-sweep 1.5s ease-out 2;
+}
+
+@keyframes ticker-alert-glow {
+  0%,
+  15% {
+    box-shadow: 0 0 0 0 rgba(209, 66, 95, 0.65);
+  }
+  8% {
+    box-shadow: 0 0 22px 3px rgba(209, 66, 95, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(209, 66, 95, 0);
+  }
+}
+
+@keyframes ticker-shimmer-sweep {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
 }
 
 .tag {
@@ -91,5 +142,12 @@
   }
   .viewport {
     overflow-x: auto;
+  }
+  .alert {
+    animation: none;
+  }
+  .alert::after {
+    animation: none;
+    display: none;
   }
 }

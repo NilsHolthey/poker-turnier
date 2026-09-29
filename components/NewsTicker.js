@@ -47,12 +47,13 @@ function TickerSegment({ items, hidden }) {
   );
 }
 
-export default function NewsTicker({ messages }) {
+export default function NewsTicker({ messages, alert }) {
   const mounted = useMounted();
 
   if (!messages || messages.length === 0 || !mounted) return null;
 
-  const baseLength = messages.join(SEPARATOR_TEXT).length;
+  const joined = messages.join(SEPARATOR_TEXT);
+  const baseLength = joined.length;
   const repeatCount = Math.max(1, Math.ceil(MIN_SEGMENT_CHARS / baseLength));
   const items = Array.from({ length: repeatCount }, () => messages).flat();
   const durationS = Math.max(MIN_DURATION_S, (items.join(SEPARATOR_TEXT).length * MS_PER_CHAR) / 1000);
@@ -66,11 +67,33 @@ export default function NewsTicker({ messages }) {
   // positionierte sich dadurch relativ zu .page (inkl. dessen Padding, daher
   // "nicht volle Breite") statt zum echten Viewport, und lag unter dem
   // global-fixed .fadeBottom aus app/layout.js statt darüber.
+  // Chat-Wunsch: "some kind of highlight on the news banner if a player
+  // busts, like flash going around the border or red shimmer going left to
+  // right" - .alert triggert Border-Glow + Shimmer-Sweep (siehe
+  // NewsTicker.module.css). key=alert-ts... nicht nötig: die Animation ist
+  // bewusst kurz und endet von selbst (kein Loop), ein erneuter Bust
+  // innerhalb der Anzeigedauer hält .alert einfach weiter true (DashboardBoard.js
+  // tickerJustBusted), kein Neustart-Bedarf.
   return createPortal(
-    <div className={styles.ticker} role="status" aria-live="polite">
+    <div className={`${styles.ticker} ${alert ? styles.alert : ""}`} role="status" aria-live="polite">
       <span className={styles.tag}>LIVE</span>
       <div className={styles.viewport}>
-        <div className={styles.track} style={{ animationDuration: `${durationS}s` }}>
+        {/* key=joined (Chat-Bugreport: "if the sentence is very long it
+            should never jump, this happens currently") - DashboardBoard.js
+            baut tickerMessages bei JEDEM 4s-Poll neu auf, auch wenn sich
+            nichts geändert hat. Ohne eigenen key bleibt dieser DOM-Knoten
+            über alle Renders hinweg derselbe, die laufende CSS-Animation
+            (translateX über animationDuration) läuft dabei einfach mit ihrer
+            BISHERIGEN verstrichenen Zeit weiter, während Inhalt UND
+            animationDuration plötzlich wechseln - bei einer neuen, deutlich
+            längeren Meldung (z.B. ein Bust-Taunt) ist der Sprung an der
+            falschen Stelle im neuen (anderslangen) Text am deutlichsten
+            sichtbar. Ein Inhalts-key sorgt dafür, dass React NUR remounted
+            (und die Animation sauber von 0% neu startet), wenn sich der
+            Text wirklich ändert - bleibt er zwischen zwei Polls gleich
+            (der Normalfall), bleibt auch der DOM-Knoten gleich und die
+            Animation läuft ungestört weiter. */}
+        <div key={joined} className={styles.track} style={{ animationDuration: `${durationS}s` }}>
           <TickerSegment items={items} />
           <TickerSegment items={items} hidden />
         </div>

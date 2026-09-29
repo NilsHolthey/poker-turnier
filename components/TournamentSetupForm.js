@@ -23,6 +23,12 @@ export default function TournamentSetupForm() {
   const [names, setNames] = useState(() => Array.from({ length: 6 }, () => ""));
   const [rebuyPhaseActive, setRebuyPhaseActive] = useState(true);
   const [sequentialSeating, setSequentialSeating] = useState(false);
+  // "Einfacher Modus" (Chat-Wunsch: "since this is the first time we are
+  // using the app in the tournament we want to reduce complexity ... this
+  // can be selected when creating the tournament by admin") - nur hier bei
+  // der Erstellung wählbar, siehe resolvePendingAction in tournamentEngine.js
+  // für die eigentliche Verhaltensänderung.
+  const [simpleMode, setSimpleMode] = useState(false);
   const [baseline, setBaseline] = useState(DEFAULT_BASELINE);
   const [dissolveThreshold, setDissolveThreshold] = useState(DEFAULT_DISSOLVE_THRESHOLD);
   const [balanceDiffThreshold, setBalanceDiffThreshold] = useState(DEFAULT_BALANCE_DIFF_THRESHOLD);
@@ -94,6 +100,7 @@ export default function TournamentSetupForm() {
         playerNames,
         rebuyPhaseActive,
         sequentialSeating,
+        simpleMode,
         baseline: Number(baseline),
         dissolveThreshold: Number(dissolveThreshold),
         balanceDiffThreshold: Number(balanceDiffThreshold),
@@ -207,40 +214,68 @@ export default function TournamentSetupForm() {
         Feste Sitzplätze (Listenreihenfolge = Sitznummer, kein Zufall)
       </label>
 
+      <label className={styles.checkboxRow}>
+        <input type="checkbox" checked={simpleMode} onChange={(e) => setSimpleMode(e.target.checked)} />
+        Einfacher Modus
+      </label>
+      {simpleMode && (
+        <p className={styles.hint}>
+          Reduzierte Komplexität fürs erste Turnier: kein Ausgleichen zwischen Tischen, nur Auflösen bei ≤3
+          Spielern (und nur wenn auf den übrigen Tischen genug Plätze frei sind - sonst spielt der Tisch mit
+          weiter). Operatoren bestätigen die Umsetzung weiter mit einem Tap, können sie aber nicht neu
+          auslosen. Im Halbfinale gibt es kein automatisches Umsetzen mehr - „nächste Phase“ verteilt alle
+          noch aktiven Spieler frisch auf den Finaltisch, sobald admin das auslöst.
+        </p>
+      )}
+
       <button type="button" className={styles.advancedToggle} onClick={() => setShowAdvanced((s) => !s)}>
         {showAdvanced ? "Balancing-Regeln ausblenden ▲" : "Balancing-Regeln anpassen ▼"}
       </button>
 
       {showAdvanced && (
         <div className={styles.advanced}>
-          <label className={styles.field}>
-            Mindestgröße, bevor Ausgleich greift
-            <input type="number" min="1" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
-          </label>
-          <label className={styles.field}>
-            Tisch auflösen bei ≤ X Spielern
-            <input
-              type="number"
-              min="0"
-              value={dissolveThreshold}
-              onChange={(e) => setDissolveThreshold(e.target.value)}
-            />
-          </label>
-          <label className={styles.field}>
-            Ausgleichen, wenn Unterschied größer als X
-            <input
-              type="number"
-              min="1"
-              value={balanceDiffThreshold}
-              onChange={(e) => setBalanceDiffThreshold(e.target.value)}
-            />
-          </label>
+          {/* baseline/dissolveThreshold/balanceDiffThreshold nur im
+              Normalmodus - im Einfachen Modus gibt es kein Ausgleichen und
+              dissolveThreshold wird nicht gelesen (siehe
+              resolvePendingAction in tournamentEngine.js), sie anzuzeigen
+              würde admin nur fälschlich suggerieren, sie hätten hier noch
+              eine Wirkung. */}
+          {!simpleMode && (
+            <>
+              <label className={styles.field}>
+                Mindestgröße, bevor Ausgleich greift
+                <input type="number" min="1" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
+              </label>
+              <label className={styles.field}>
+                Tisch auflösen bei ≤ X Spielern
+                <input
+                  type="number"
+                  min="0"
+                  value={dissolveThreshold}
+                  onChange={(e) => setDissolveThreshold(e.target.value)}
+                />
+              </label>
+              <label className={styles.field}>
+                Ausgleichen, wenn Unterschied größer als X
+                <input
+                  type="number"
+                  min="1"
+                  value={balanceDiffThreshold}
+                  onChange={(e) => setBalanceDiffThreshold(e.target.value)}
+                />
+              </label>
+            </>
+          )}
           {/* Chat-Wunsch: "add it to the tournament form so we can decide on
               the conditions" - für die "mehrere kleine Tische gleichzeitig"
-              Situation, die weder Auflösen noch Ausgleichen abdeckt. */}
+              Situation, die weder Auflösen noch Ausgleichen abdeckt. Im
+              Einfachen Modus ist "Tisch gilt als klein bei ≤ X Spielern"
+              GLEICHZEITIG der Auflösungs-Schwellwert selbst (siehe
+              findSimpleModeDissolve) statt nur einer Alarm-Schwelle. */}
           <p className={styles.hint}>
-            Admin-Benachrichtigung, wenn mehrere Tische unabhängig voneinander klein geworden sind (weder
-            Auflösen noch Ausgleichen greift dann automatisch).
+            {simpleMode
+              ? "Ab dieser Größe wird ein Tisch aufgelöst (wenn auf den übrigen Tischen genug Plätze frei sind)."
+              : "Admin-Benachrichtigung, wenn mehrere Tische unabhängig voneinander klein geworden sind (weder Auflösen noch Ausgleichen greift dann automatisch)."}
           </p>
           <div className={styles.row}>
             <label className={styles.field}>
@@ -252,15 +287,17 @@ export default function TournamentSetupForm() {
                 onChange={(e) => setSmallTableThreshold(e.target.value)}
               />
             </label>
-            <label className={styles.field}>
-              Alarm ab X kleinen Tischen
-              <input
-                type="number"
-                min="1"
-                value={smallTableAlertCount}
-                onChange={(e) => setSmallTableAlertCount(e.target.value)}
-              />
-            </label>
+            {!simpleMode && (
+              <label className={styles.field}>
+                Alarm ab X kleinen Tischen
+                <input
+                  type="number"
+                  min="1"
+                  value={smallTableAlertCount}
+                  onChange={(e) => setSmallTableAlertCount(e.target.value)}
+                />
+              </label>
+            )}
           </div>
         </div>
       )}

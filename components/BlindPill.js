@@ -25,7 +25,7 @@ const AUTO_COLLAPSE_MS = 6000;
 // Effekt statt eines woanders auftauchenden Dropdowns. Tickt lokal jede
 // Sekunde weiter (computeEffectiveBlindState ist eine reine Funktion, kein
 // Server-Roundtrip nötig).
-export default function BlindPill({ schedule, isAdmin, onAdvance, onStart, onEdit, busy }) {
+export default function BlindPill({ schedule, isAdmin, onAdvance, onStart, onPause, onResume, onEdit, busy }) {
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const mounted = useMounted();
@@ -67,7 +67,7 @@ export default function BlindPill({ schedule, isAdmin, onAdvance, onStart, onEdi
     );
   }
 
-  const { effectiveIndex, remainingMs, level, started } = computeEffectiveBlindState(schedule, now);
+  const { effectiveIndex, remainingMs, level, started, paused } = computeEffectiveBlindState(schedule, now);
   const nextLevel = schedule.levels[effectiveIndex + 1] ?? null;
 
   return (
@@ -99,7 +99,7 @@ export default function BlindPill({ schedule, isAdmin, onAdvance, onStart, onEdi
           open
             ? "Blindstruktur, antippen zum Schließen"
             : started
-              ? `Blinds ${formatBlindLevel(level)}, antippen für Details`
+              ? `Blinds ${formatBlindLevel(level)}${paused ? ", pausiert" : ""}, antippen für Details`
               : "Blinds noch nicht gestartet, antippen für Details"
         }
       >
@@ -108,7 +108,9 @@ export default function BlindPill({ schedule, isAdmin, onAdvance, onStart, onEdi
             <span className={styles.value}>{formatBlindLevel(level)}</span>
             {started ? (
               <>
-                <span className={styles.timer}>{formatRemaining(remainingMs)} verbleibend</span>
+                <span className={`${styles.timer} ${paused ? styles.timerPaused : ""}`}>
+                  {formatRemaining(remainingMs)} {paused ? "pausiert" : "verbleibend"}
+                </span>
                 <div className={styles.nextRow}>
                   <span className={styles.nextLabel}>Nächstes</span>
                   <span className={styles.nextValue}>{nextLevel ? formatBlindLevel(nextLevel) : "Ende"}</span>
@@ -121,6 +123,24 @@ export default function BlindPill({ schedule, isAdmin, onAdvance, onStart, onEdi
               <div className={styles.adminControls}>
                 {started ? (
                   <>
+                    {/* Chat-Wunsch: "admin should have more control over the
+                        blindes and timer so pausing it should be a
+                        possibility ... add it to the notch pill where we
+                        already have the forward backward logic" - rein
+                        manuelles Pausieren/Fortsetzen, kein automatisches
+                        Pausieren bei Phasenübergängen (Vorrunde/HF/Finale). */}
+                    <button
+                      type="button"
+                      className={paused ? styles.resumeButton : undefined}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        paused ? onResume() : onPause();
+                      }}
+                      disabled={busy}
+                      aria-label={paused ? "Blind-Uhr fortsetzen" : "Blind-Uhr pausieren"}
+                    >
+                      {paused ? "▶" : "❚❚"}
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -176,6 +196,7 @@ export default function BlindPill({ schedule, isAdmin, onAdvance, onStart, onEdi
           <span className={styles.collapsedValue}>
             {formatBlindLevel(level)}
             {!started && <span className={styles.notStartedDot} aria-hidden="true" />}
+            {started && paused && <span className={styles.pausedDot} aria-hidden="true" />}
           </span>
         )}
       </div>

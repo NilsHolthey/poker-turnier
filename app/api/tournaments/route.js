@@ -101,6 +101,7 @@ export async function POST(request) {
       rebuyPhaseActive: !!body.rebuyPhaseActive,
       phasePlans,
       sequentialSeating: !!body.sequentialSeating,
+      simpleMode: !!body.simpleMode,
     });
     return NextResponse.json(result, { status: 201 });
   } catch (err) {

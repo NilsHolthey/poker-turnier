@@ -47,6 +47,15 @@
   transition: border-color 0.5s ease, width 0.3s ease, height 0.3s ease;
 }
 
+/* Chat-Wunsch: "if final table is reached ... the table should get a golden
+   glow" - --gold ist im Farbschema derselbe Wert wie --accent (#a38560, siehe
+   app/globals.css). Statischer Glow statt Animation (Chat: "no need for an
+   animation just the glow") - fester zusätzlicher Ring neben den
+   bestehenden Basis-Schatten, kein Pulsieren. */
+.finale {
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5), 0 6px 18px rgba(0, 0, 0, 0.35), 0 0 22px 5px rgba(163, 133, 96, 0.65);
+}
+
 /* Ersetzt das frühere separate Label ÜBER der Kapsel (Bugreport: "table
    titles are still behind the table/player, we do not have the space") -
    bei 1180x820 mit 3 Tischreihen ist schlicht keine Zeile Platz für einen
