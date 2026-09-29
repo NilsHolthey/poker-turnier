@@ -3,7 +3,12 @@ import { auth0 } from "@/lib/auth0";
 import { getDb } from "@/lib/db/mongodb";
 import { getRole } from "@/lib/authz";
 import AdminBoard from "@/components/AdminBoard";
-import { PHASES, DEFAULT_BALANCE_DIFF_THRESHOLD } from "@/lib/constants";
+import {
+  PHASES,
+  DEFAULT_BALANCE_DIFF_THRESHOLD,
+  DEFAULT_SMALL_TABLE_THRESHOLD,
+  DEFAULT_SMALL_TABLE_ALERT_COUNT,
+} from "@/lib/constants";
 import LoginGate from "@/components/LoginGate";
 import styles from "../page.module.css";
 
@@ -42,6 +47,8 @@ export default async function AdminPage() {
         baseline: tournament.config.baseline,
         dissolveThreshold: tournament.config.dissolveThreshold,
         balanceDiffThreshold: tournament.config.balanceDiffThreshold ?? DEFAULT_BALANCE_DIFF_THRESHOLD,
+        smallTableThreshold: tournament.config.smallTableThreshold ?? DEFAULT_SMALL_TABLE_THRESHOLD,
+        smallTableAlertCount: tournament.config.smallTableAlertCount ?? DEFAULT_SMALL_TABLE_ALERT_COUNT,
         halbfinaleTableCount: tournament.phasePlans?.[1]?.targetTables ?? PHASES[1].targetTables,
         halbfinaleTableSize: tournament.phasePlans?.[1]?.tableSize ?? PHASES[1].tableSize,
         finaleTableSize: tournament.phasePlans?.[2]?.tableSize ?? PHASES[2].tableSize,

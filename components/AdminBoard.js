@@ -182,6 +182,24 @@ export default function AdminBoard({ tournamentId, tournamentName, schedule, set
         )}
       </section>
 
+      {/* Chat-Wunsch: "TV dashboard ... implement it for admin first ...
+          for now reachable via admin" - eigene Seite (/dashboard) statt Modal,
+          gedacht zum Spiegeln auf einen großen Screen (AirPlay/HDMI). Gate ist
+          vorläufig admin-only, bis es den geplanten eigenen
+          "overview"-Account gibt. */}
+      {tournamentId && (
+        <section className={styles.card}>
+          <h2 className={styles.cardTitle}>TV-Dashboard</h2>
+          <p className={styles.hint}>
+            Alle Tische, die volle Blindstruktur und alle Spieler auf einen Blick - für einen großen
+            Screen (AirPlay/HDMI).
+          </p>
+          <a href="/dashboard" target="_blank" rel="noopener noreferrer" className={styles.actionButton}>
+            Dashboard öffnen
+          </a>
+        </section>
+      )}
+
       {showBlindSchedule && tournamentId && (
         <BlindScheduleSheet
           tournamentId={tournamentId}

@@ -204,6 +204,32 @@
   background: rgb(var(--accent-rgb) / 0.08);
 }
 
+.rebuyRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rebuyPill {
+  flex-shrink: 0;
+  min-width: 34px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.rebuyPillActive {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+  background: rgb(var(--accent-rgb) / 0.16);
+  color: var(--accent);
+}
+
 .error {
   font-size: 0.82rem;
   color: var(--danger);

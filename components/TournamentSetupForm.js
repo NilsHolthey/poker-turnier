@@ -7,6 +7,8 @@ import {
   DEFAULT_BASELINE,
   DEFAULT_DISSOLVE_THRESHOLD,
   DEFAULT_BALANCE_DIFF_THRESHOLD,
+  DEFAULT_SMALL_TABLE_THRESHOLD,
+  DEFAULT_SMALL_TABLE_ALERT_COUNT,
 } from "@/lib/constants";
 import styles from "./TournamentSetupForm.module.css";
 
@@ -24,6 +26,8 @@ export default function TournamentSetupForm() {
   const [baseline, setBaseline] = useState(DEFAULT_BASELINE);
   const [dissolveThreshold, setDissolveThreshold] = useState(DEFAULT_DISSOLVE_THRESHOLD);
   const [balanceDiffThreshold, setBalanceDiffThreshold] = useState(DEFAULT_BALANCE_DIFF_THRESHOLD);
+  const [smallTableThreshold, setSmallTableThreshold] = useState(DEFAULT_SMALL_TABLE_THRESHOLD);
+  const [smallTableAlertCount, setSmallTableAlertCount] = useState(DEFAULT_SMALL_TABLE_ALERT_COUNT);
   const [halbfinaleTableCount, setHalbfinaleTableCount] = useState(PHASES[1].targetTables);
   const [halbfinaleTableSize, setHalbfinaleTableSize] = useState(PHASES[1].tableSize);
   const [finaleTableSize, setFinaleTableSize] = useState(PHASES[2].tableSize);
@@ -93,6 +97,8 @@ export default function TournamentSetupForm() {
         baseline: Number(baseline),
         dissolveThreshold: Number(dissolveThreshold),
         balanceDiffThreshold: Number(balanceDiffThreshold),
+        smallTableThreshold: Number(smallTableThreshold),
+        smallTableAlertCount: Number(smallTableAlertCount),
         halbfinaleTableCount: Number(halbfinaleTableCount),
         halbfinaleTableSize: Number(halbfinaleTableSize),
         finaleTableSize: Number(finaleTableSize),
@@ -229,6 +235,33 @@ export default function TournamentSetupForm() {
               onChange={(e) => setBalanceDiffThreshold(e.target.value)}
             />
           </label>
+          {/* Chat-Wunsch: "add it to the tournament form so we can decide on
+              the conditions" - für die "mehrere kleine Tische gleichzeitig"
+              Situation, die weder Auflösen noch Ausgleichen abdeckt. */}
+          <p className={styles.hint}>
+            Admin-Benachrichtigung, wenn mehrere Tische unabhängig voneinander klein geworden sind (weder
+            Auflösen noch Ausgleichen greift dann automatisch).
+          </p>
+          <div className={styles.row}>
+            <label className={styles.field}>
+              Tisch gilt als klein bei ≤ X Spielern
+              <input
+                type="number"
+                min="0"
+                value={smallTableThreshold}
+                onChange={(e) => setSmallTableThreshold(e.target.value)}
+              />
+            </label>
+            <label className={styles.field}>
+              Alarm ab X kleinen Tischen
+              <input
+                type="number"
+                min="1"
+                value={smallTableAlertCount}
+                onChange={(e) => setSmallTableAlertCount(e.target.value)}
+              />
+            </label>
+          </div>
         </div>
       )}
 

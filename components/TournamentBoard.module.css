@@ -13,6 +13,56 @@
   padding-bottom: calc(112px + env(safe-area-inset-bottom));
 }
 
+/* KO-Phase-Look: dunklerer Hintergrund + atmender Rot-Schimmer, beides NUR
+   während der KO-Phase (Chat: "is the darker background state related? ...
+   make it phase-based - darker only during KO phase") - die globale
+   --background bleibt unverändert für Rebuy/normalen Betrieb, dieser Layer
+   legt sich nur bei !rebuyActive zusätzlich über den Hintergrund. Bewusst
+   KEIN eigener z-index (bleibt im "kein z-index, normaler Fluss"-Layer der
+   Leiter unten), steht aber als erstes Kind vor .container im DOM, landet
+   dadurch im Stacking allein durch DOM-Reihenfolge hinter dem eigentlichen
+   Inhalt, ohne den für body::before/::after reservierten negativen
+   z-index-Bereich anzufassen. */
+/* Eigenes, unanimiertes Element für die Verdunkelung (statt in .koShimmer
+   kombiniert) - opacity-Keyframes würden sonst BEIDE Hintergrundebenen
+   gemeinsam pulsieren lassen, die Verdunkelung soll aber ruhig/konstant
+   bleiben, damit der Inhalt lesbar bleibt statt mitzuflackern. */
+.koDarken {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.koShimmer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 30%, rgba(209, 66, 95, 0.22), transparent 62%);
+  /* 4 statt infinite (Chat: "make the animation not infinite") - pulsiert
+     kurz auf, hält danach ruhig bei der letzten Keyframe-Opazität statt
+     endlos weiterzuatmen. */
+  animation: ko-shimmer-breathe 5s ease-in-out 4;
+  animation-fill-mode: forwards;
+}
+
+@keyframes ko-shimmer-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .koShimmer {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
 /* Responsive: mobile bleibt edge-to-edge, ab Tablet/Desktop zentriert sich der
    Inhalt in einem wachsenden Container statt gestreckt über die volle Breite. */
 .container {

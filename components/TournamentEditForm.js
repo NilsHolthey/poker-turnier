@@ -54,6 +54,13 @@ export default function TournamentEditForm({ tournamentId, settings, onSaved }) 
         {number("baseline", "Mindestgröße, bevor Ausgleich greift")}
         {number("dissolveThreshold", "Tisch auflösen bei ≤ X Spielern", 0)}
         {number("balanceDiffThreshold", "Ausgleichen, wenn Unterschied größer als X")}
+        {/* Chat-Wunsch: "add it to the tournament form so we can decide on
+            the conditions" - Alarm für "mehrere Tische gleichzeitig klein",
+            siehe countSmallTables in lib/core/dissolve.js. */}
+        <div className={styles.row}>
+          {number("smallTableThreshold", "Tisch gilt als klein bei ≤ X Spielern", 0)}
+          {number("smallTableAlertCount", "Alarm ab X kleinen Tischen")}
+        </div>
       </div>
 
       <div className={styles.advanced}>

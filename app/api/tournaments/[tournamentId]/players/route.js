@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db/mongodb";
 import { requireRole, canManageTable } from "@/lib/authz";
-import { nextFreeSeatNum, tableOrdinalFromLabel, seatOf } from "@/lib/core";
+import { nextFreeSeatNum, tableOrdinalFromLabel, seatOf, isRebuyPhaseActive } from "@/lib/core";
 
 // POST /api/tournaments/:tournamentId/players - Spieler hinzufügen.
 // admin: immer erlaubt. operator: nur solange config.rebuyPhaseActive === true
@@ -17,7 +17,9 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "Turnier nicht gefunden" }, { status: 404 });
   }
 
-  const allowedRoles = tournament.config.rebuyPhaseActive ? ["admin", "operator"] : ["admin"];
+  const allowedRoles = isRebuyPhaseActive(tournament.config, tournament.blindSchedule)
+    ? ["admin", "operator"]
+    : ["admin"];
   const auth = await requireRole(request, allowedRoles);
   if (auth.error) return auth.error;
 

@@ -14,6 +14,7 @@ import FullScreenAlert from "./FullScreenAlert";
 import ConfirmDialog from "./ConfirmDialog";
 import Toast from "./Toast";
 import DissolveOverview from "./DissolveOverview";
+import AddPlayerDialog from "./AddPlayerDialog";
 import {
   fetchTournamentState,
   removePlayer,
@@ -25,8 +26,10 @@ import {
   endPhase,
   setBlindLevelIndex,
   startBlindClock,
+  mergeTable,
 } from "@/lib/client/api";
 import { PHASES } from "@/lib/constants";
+import { isRebuyPhaseActive, tableOrdinalFromLabel } from "@/lib/core";
 import styles from "./TournamentBoard.module.css";
 
 const ROLLING_DURATION_MS = 1300;
@@ -89,6 +92,14 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   // - niemand kann das manuell ändern.
   const myTableId = user?.myTableId ?? null;
   const [manageTableId, setManageTableId] = useState(null);
+  // Admin-ausgelöstes manuelles Auflösen/Zusammenlegen eines Tisches
+  // (Chat-Wunsch: "we kind of need the possibility to merge tables") - Button
+  // sitzt in ManageTableSheet, Bestätigung hier wie bei den übrigen
+  // destruktiven Aktionen (confirmRemovePlayer/confirmEndPhase).
+  const [confirmMergeTable, setConfirmMergeTable] = useState(false);
+  // { tableId, seatIndex } solange der Namens-Dialog für einen neuen Spieler
+  // offen ist (Chat-Bugreport: Default-Namen-Kollision, siehe handleQuickAdd).
+  const [addPlayerPrompt, setAddPlayerPrompt] = useState(null);
   const [showBlindSchedule, setShowBlindSchedule] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [drawPhase, setDrawPhase] = useState(null);
@@ -181,9 +192,21 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     });
   }
 
+  // Fragt IMMER nach einem Namen statt still auf "Spieler <num>" zu defaulten
+  // (Chat-Bugreport: Tisch-/Sitznummern werden wiederverwendet, sobald ein
+  // Spieler umgesetzt wird - ein später ohne Namen hinzugefügter neuer
+  // Spieler auf demselben Sitz bekam denselben Default-Namen wie der längst
+  // umgesetzte, obwohl beide unterschiedliche, eigene ObjectIds haben).
   function handleQuickAdd(tableId, seatIndex) {
+    setAddPlayerPrompt({ tableId, seatIndex });
+  }
+
+  function confirmAddPlayer(name) {
+    const prompt = addPlayerPrompt;
+    if (!prompt) return;
+    setAddPlayerPrompt(null);
     runAction(async () => {
-      await addPlayer(tournamentId, { tableId, seatIndex });
+      await addPlayer(tournamentId, { tableId: prompt.tableId, seatIndex: prompt.seatIndex, name });
       await reload();
     });
   }
@@ -299,6 +322,22 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     setConfirmEndPhase(true);
   }
 
+  function handleMergeTable() {
+    setConfirmMergeTable(true);
+  }
+
+  function confirmMergeTableAction() {
+    const tableId = manageTableId;
+    setConfirmMergeTable(false);
+    setManageTableId(null);
+    if (!tableId) return;
+    runAction(async () => {
+      const { pendingAction: next } = await mergeTable(tournamentId, tableId);
+      await reload();
+      if (next) startDraw(next);
+    });
+  }
+
   function confirmEndPhaseAction() {
     setConfirmEndPhase(false);
     runAction(async () => {
@@ -319,7 +358,15 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     [activeTableId, myTableId, tables[0]?._id].find((id) => id && tables.some((t) => t._id === id)) ?? null;
   const activeTable = tables.find((t) => t._id === effectiveActiveTableId);
   const manageTable = tables.find((t) => t._id === manageTableId);
+  // Für den Namens-Kollisions-Check beim Hinzufügen (Chat-Wunsch: "4 player
+  // named Flo ... check against all players") - Tisch-Label direkt dabei,
+  // damit die Warnung sagen kann WO der Namensvetter sitzt.
+  const activePlayersWithTable = players.map((p) => ({
+    name: p.name,
+    tableLabel: tables.find((t) => t._id === p.tableId)?.label,
+  }));
   const hasNextPhase = tournament.phaseIndex < PHASES.length - 1;
+  const rebuyActive = isRebuyPhaseActive(tournament.config, tournament.blindSchedule);
   // Chat-Wunsch: operator darf nur den eigenen Tisch verwalten (sonst könnten
   // Spieler an fremden Tischen umbenannt/entfernt werden) - die eigentliche
   // Durchsetzung sitzt serverseitig in den Routen (lib/authz.js
@@ -364,6 +411,16 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
 
   return (
     <div className={styles.board}>
+      {/* Chat-Wunsch: "make the app background darker ... for ko phase" -
+          Hintergrund bleibt global unverändert (nur während Rebuy normal
+          hell), erst die KO-Phase legt Verdunkelung + atmenden Rot-Schimmer
+          zusätzlich darüber. */}
+      {!rebuyActive && (
+        <>
+          <div className={styles.koDarken} aria-hidden="true" />
+          <div className={styles.koShimmer} aria-hidden="true" />
+        </>
+      )}
       <div className={styles.container}>
         <header className={styles.header}>
           <HamburgerMenu user={user} onLogout={() => setConfirmLogout(true)} />
@@ -427,6 +484,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
                     players={players.filter((p) => p.tableId === activeTable._id)}
                     playerCount={players.length}
                     phaseName={PHASES[tournament.phaseIndex].name}
+                    rebuyActive={rebuyActive}
                     isGlowing={glowTableIds.includes(activeTable._id)}
                     disabled={busy || !canManageActiveTable}
                     removeDisabled={busy}
@@ -496,7 +554,33 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           onAdd={handleManageAdd}
           onRename={handleRename}
           onClose={() => setManageTableId(null)}
+          isAdmin={user?.role === "admin"}
+          onMerge={tables.length > 1 ? handleMergeTable : undefined}
+          existingPlayers={activePlayersWithTable}
           busy={busy}
+        />
+      )}
+
+      {addPlayerPrompt && (
+        <AddPlayerDialog
+          seatLabel={(() => {
+            const t = tables.find((table) => table._id === addPlayerPrompt.tableId);
+            return t ? `${tableOrdinalFromLabel(t.label)}.${addPlayerPrompt.seatIndex + 1}` : null;
+          })()}
+          existingPlayers={activePlayersWithTable}
+          onConfirm={confirmAddPlayer}
+          onCancel={() => setAddPlayerPrompt(null)}
+          busy={busy}
+        />
+      )}
+
+      {confirmMergeTable && (
+        <ConfirmDialog
+          message={`"${manageTable?.label}" auflösen und alle Spieler auf die übrigen Tische verteilen?`}
+          confirmLabel="Auflösen"
+          danger
+          onConfirm={confirmMergeTableAction}
+          onCancel={() => setConfirmMergeTable(false)}
         />
       )}
 

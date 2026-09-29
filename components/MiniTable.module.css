@@ -1,0 +1,116 @@
+/* Alle Maße (Kapsel/Kreise/Name/Label-Schriftgröße) kommen jetzt als
+   Inline-Style aus MiniTable.js, berechnet in DashboardBoard.js
+   (computeCapsuleSize) aus der per ResizeObserver TATSÄCHLICH gemessenen
+   .tablesArea-Fläche - nicht mehr aus CSS %/aspect-ratio/clamp(vh/cqh).
+   Grund (Bugreport, Screenshot bei 1180x820): eine Kapsel mit nur
+   prozentualer Höhe + aspect-ratio-abgeleiteter Breite ist bei 3
+   Tischreihen praktisch auf 0 Breite kollabiert - die absolut
+   positionierten Sitzplätze (SEAT_POSITIONS, zählen nicht zur Eigengröße
+   ihres Containers) sind dadurch alle auf denselben Punkt gefallen statt
+   sich oval zu verteilen. Explizite, in JS berechnete Pixelwerte sind
+   hier robuster als CSS, das diese Verschachtelung (Flex > % Höhe >
+   aspect-ratio > position:absolute-Kinder) zuverlässig auflösen soll. */
+.wrapper {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease;
+}
+
+/* Ausgegraut statt entfernt, sobald ein Tisch aufgelöst wurde (Chat-Wunsch:
+   "do not remove the table when it's deleted but rather show a greyed out
+   version so we always have the 8 tables") - bleibt an seinem Platz im
+   Raster stehen, damit die Zeilenaufteilung (TABLE_ROW_LAYOUTS) über die
+   ganze Phase hinweg stabil bleibt statt bei jeder Auflösung neu umzubrechen. */
+.inactive {
+  opacity: 0.35;
+}
+
+.inactive .centerLabel {
+  color: var(--text-muted);
+}
+
+.inactive .capsule {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.capsule {
+  position: relative;
+  border-radius: 999px;
+  border: 3px solid;
+  background: var(--surface);
+  background-image: radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.1), transparent 55%);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5), 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.5s ease, width 0.3s ease, height 0.3s ease;
+}
+
+/* Ersetzt das frühere separate Label ÜBER der Kapsel (Bugreport: "table
+   titles are still behind the table/player, we do not have the space") -
+   bei 1180x820 mit 3 Tischreihen ist schlicht keine Zeile Platz für einen
+   Titel über der Kapsel übrig. Die Tischmitte ist dagegen ungenutzt (alle
+   Sitze/Namen liegen außerhalb am Rand, siehe SEAT_POSITIONS), also einfach
+   die Tischnummer dort zentriert statt eines eigenen Layout-Elements. */
+.centerLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 800;
+  pointer-events: none;
+  transition: color 0.5s ease;
+}
+
+.seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--surface-2);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.emptyCircle {
+  display: block;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+}
+
+.name {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(3, 17, 13, 0.8);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bank {
+  margin-left: 3px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.fallbackList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.7rem;
+  color: var(--text);
+}

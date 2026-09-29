@@ -1,0 +1,397 @@
+/* TV-Dashboard (Chat-Wunsch: "dashboard like overview page ... airplay on a
+   big tv"): fluides Breitbild-Layout statt fester 1080p-Pixelmaße - läuft
+   real in einem gespiegelten Browserfenster eines separaten Geräts, das die
+   TV-eigene Auflösung/Skalierung übernimmt AirPlay/HDMI erledigt das Scaling,
+   nicht diese Seite. */
+.page {
+  /* height + overflow:hidden statt min-height (Chat: "there should never be
+     scroll ... we need to work with vh and percentage here") - der erste
+     Versuch scheiterte nicht an height:100dvh selbst, sondern daran, dass
+     die Kinder in fixen px/vh-Werten gerechnet waren, die nicht zueinander
+     passten (Panels in fester vh-Höhe, MiniTable in fixen px). Jetzt sind
+     alle Kinder unten proportional (flex-Anteile/%/aspect-ratio) statt fix,
+     füllen die hier gedeckelte Höhe also wirklich exakt aus. */
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Rand um 80% reduziert (Chat: "decrease the margin by 80 percent, we will
+     not need that much") - der ursprüngliche 48px-TV-Overscan-Rand war für
+     ein per AirPlay/HDMI gespiegeltes Rohsignal auf einen echten Fernseher
+     gedacht; als PWA direkt vom iPad reicht ein knapper Rand. 48px * 0.2 =
+     9.6px, aufgerundet 10px. Unten zusätzlich Platz für den fixed News-Ticker
+     (56px Höhe, siehe NewsTicker.module.css .ticker) + dessen eigenen, auch
+     reduzierten 10px-Abstand zum echten Rand + 20px Luft dazwischen. */
+  padding: 10px 10px 86px;
+  /* Sanftes Einblenden beim ersten Laden statt hartem Erscheinen (Chat: "add
+     some animation and transition") - dieselbe Keyframe wie überall sonst in
+     der App (app/globals.css). */
+  animation: content-fade-in 0.3s ease;
+}
+
+/* 1fr 3fr 1fr statt fester Pixelbreiten für die Seitenspalten (Chat: "use
+   grid something like 1fr 3fr 1fr") - Spieler/Blinds skalieren proportional
+   mit, statt bei jeder Screen-Größe neu als Pixelwert geraten zu werden;
+   Tische bekommen dadurch automatisch den Löwenanteil der Breite. */
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr;
+  gap: 14px;
+  min-height: 0;
+}
+
+/* Handverlesene Zeilen statt einem festen Spaltenraster (Chat: "I want them
+   to be more symetrical ... every row should always be centered") - welche
+   Tische in welche Zeile kommen, entscheidet chunkTablesIntoRows() in
+   DashboardBoard.js (TABLE_ROW_LAYOUTS).
+   grid-template-rows: repeat(var(--row-count), 1fr) teilt die verfügbare
+   Fläche IMMER exakt in --row-count gleich große Zeilen auf (Custom Property
+   kommt per Inline-Style aus tableRows.length in DashboardBoard.js), egal ob
+   1 oder 3 Zeilen. */
+.tablesArea {
+  display: grid;
+  grid-template-rows: repeat(var(--row-count), 1fr);
+  /* MUSS mit ROWS_GAP in DashboardBoard.js übereinstimmen - dieselbe
+     Kopplung wie beim .tableRow-Gap unten. */
+  gap: 20px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.tableRow {
+  display: flex;
+  /* stretch statt center - MiniTable füllt die Zeilenhöhe damit per
+     height: 100% wirklich komplett aus (siehe MiniTable.module.css), statt
+     nur mittig mit eigener Inhaltsgröße zu sitzen. */
+  align-items: stretch;
+  justify-content: center;
+  /* Dieser Wert (12px) MUSS mit ROW_GAP in DashboardBoard.js übereinstimmen -
+     computeCapsuleSize() dort rechnet die pro-Tisch-Breite (inkl. Puffer für
+     seitlich überstehende Sitze, siehe MiniTable.js) exakt gegen diesen Gap
+     aus. Eine Änderung hier ohne die Konstante dort anzupassen würde die
+     JS-berechnete Größe wieder von der echten Layout-Breite abweichen lassen. */
+  gap: 12px;
+  min-height: 0;
+  /* Reihe mit weniger Tischen als die längste Reihe des Layouts wird
+     schmaler + zentriert statt volle Breite (Chat: "the middle row ...
+     tables should exactly sit between the others so it's symmetrical") -
+     --row-width-ratio kommt pro Zeile aus DashboardBoard.js
+     (rowTables.length / maxRowLen). */
+  width: calc(var(--row-width-ratio, 1) * 100%);
+  margin: 0 auto;
+  /* Reihen blenden nacheinander statt alle gleichzeitig ein - jede Zeile
+     maximal 3 Reihen (TABLE_ROW_LAYOUTS), daher reicht ein kurzer,
+     handgesetzter Delay statt einer dynamischen Berechnung pro Tisch. */
+  animation: content-fade-in 0.35s ease both;
+}
+
+.tableRow:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.tableRow:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+/* Eine Spalte links (Spieler), eine rechts (Blinds), Tische dazwischen als
+   Hauptfläche (Chat: "player list on the left side, blindes on the right
+   side"). Kein align-self: start mehr - die zweite Karte pro Spalte
+   (.statsPanel/.blindNowPanel) füllt den Rest der Zeilenhöhe jetzt bewusst
+   aus (Chat: "bottom left/right now we have won some space ... here should
+   be info"). */
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Proportionale flex-Anteile statt fester vh-Werte (Chat: "we need to work
+   with vh and percentage here" / "there should never be scroll") - vh
+   bezieht sich auf die GESAMTE Viewport-Höhe, nicht auf das, was in dieser
+   Spalte nach Header/Padding/Ticker tatsächlich übrig bleibt; feste vh-Werte
+   für mehrere Geschwister in derselben Spalte können sich dadurch in Summe
+   zu mehr als 100% dieser Spalte addieren. Mit flex-Anteilen füllen
+   .playerPanel/.statsPanel bzw. .blindPanel/.blindNowPanel IMMER exakt die
+   Höhe ihrer Spalte, nur das Verhältnis bleibt gleich (3:1 bzw. 2:1). */
+.playerPanel {
+  flex: 3;
+  min-height: 0;
+}
+
+.blindPanel {
+  flex: 2;
+  min-height: 0;
+}
+
+.statsPanel {
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+}
+
+.blindNowPanel {
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+}
+
+.bigStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0 16px;
+}
+
+.bigStatValue {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  background: var(--gradient-accent);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Deutlich größer als der Blindwert daneben (Chat: "spieler übrig number
+   should be way bigger") - nur die Spielerzahl, nicht der (längere)
+   Blind-Textwert, der sonst in der schmalen Spalte umbrechen würde. */
+.playerCountValue {
+  font-size: 1.6rem;
+}
+
+.bigStatLabel {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.infoRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 4px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.infoLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.infoValue {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  /* Farbwechsel, wenn Rebuy endet (grün -> rot), weich statt abrupt. */
+  transition: color 0.4s ease;
+}
+
+.rebuyOn .infoValue {
+  color: #4ade80;
+}
+
+.rebuyOff .infoValue {
+  color: var(--danger);
+}
+
+.panelTitle {
+  font-size: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-left: 2px solid var(--accent);
+  padding-left: 8px;
+  display: none;
+}
+
+.empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Feste rem-Werte statt clamp(cqh) (Chat: "work on blindlevels font size and
+   padding make it smaller but not as small as on playerlist") - passend zur
+   Vereinfachung, die schon bei .playerRow gemacht wurde (eine feste
+   Zielgröße statt einer sich selbst einpassenden Berechnung), nur mit
+   spürbar größeren Werten als dort (0.68rem vs. 0.5rem), weil hier weniger
+   Zeilen (Level) auf einmal reinmüssen als Spieler in der Liste. */
+.blindList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+}
+
+.blindRow {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  /* Sanfter Wechsel, wenn das aktuelle Level weiterspringt, statt eines
+     harten Umschaltens von einer Zeile auf die nächste. */
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.blindRowCurrent {
+  background: rgb(var(--accent-rgb) / 0.14);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.blindIndex {
+  font-variant-numeric: tabular-nums;
+}
+
+.blindLevelValue {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dauer + Uhrzeit gestapelt statt nur Dauer (Chat: "list should not only
+   carry duration also time") - Uhrzeit kommt aus computeLevelStartTimes()
+   (lib/core/blindSchedule.js), schedule.startTime + aufsummierte Dauer der
+   vorherigen Level. */
+.blindMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.blindDuration {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.blindTime {
+  font-size: 0.52rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Zwei Spalten statt einer langen Liste (Chat: "player list should be two
+   collums") - column-count statt Grid, damit die Liste einfach von oben nach
+   unten befüllt wird und erst dann in die zweite Spalte umbricht, wie bei
+   einer Zeitungsspalte. */
+.playerList {
+  flex: 1;
+  column-count: 2;
+  column-gap: 4px;
+  overflow-y: auto;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  font-size: 0.5rem;
+  /* Verhindert, dass eine Zeile mitten im Spaltenumbruch auseinandergerissen wird. */
+  break-inside: avoid;
+  /* Sanfter Übergang statt hartem Sprung, wenn eine Zeile von aktiv auf
+     rot-markiert (Bust) oder von rot auf ausgegraut (settled) wechselt. */
+  transition: opacity 0.4s ease, background-color 0.4s ease;
+}
+
+.playerRow:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Gebustete Spieler bleiben in der Liste statt zu verschwinden (Chat-Wunsch:
+   "the list should not shrink ... get appended at the end greyed out") -
+   ausgegraut und durchgestrichen, landen aber immer sortiert nach bustedAt
+   am Ende (siehe sortedPlayers in DashboardBoard.js). */
+.playerBusted {
+  opacity: 0.4;
+}
+
+.playerBusted .playerName {
+  text-decoration: line-through;
+}
+
+/* Kurzes rotes Aufblitzen direkt nach dem Bust-out (Chat: "player is out ...
+   we have the player kind of highlighted red") - muss NACH .playerBusted
+   stehen, um dessen opacity/Farbe für die ersten Sekunden zu überschreiben. */
+/* .playerRow.playerJustBusted statt nur .playerJustBusted - gleiche
+   Spezifitaet wie :nth-child(odd) oben, gewinnt den Tiebreak dadurch per
+   Quellreihenfolge (dieser Block steht spaeter im File). */
+.playerRow.playerJustBusted {
+  opacity: 1;
+  background: rgba(209, 66, 95, 0.25);
+  animation: player-just-busted-glow 6s ease-out forwards;
+}
+
+.playerJustBusted .playerName {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+/* Pulsierender Ring statt nur flacher Hintergrundfarbe (Chat: "make the red
+   highlight more glowing") - gleiche Ring-Technik wie das bestehende
+   Umsetzungs-Glühen in app/globals.css (glow-pulse), nur rot statt gold und
+   über die volle 6s-Highlight-Dauer gestreckt: zwei Pulse, dann Halten, dann
+   gemeinsames Ausblenden mit dem Hintergrund. */
+@keyframes player-just-busted-glow {
+  0%,
+  20%,
+  40% {
+    background: rgba(209, 66, 95, 0.3);
+    box-shadow: 0 0 0 0 rgba(209, 66, 95, 0.6);
+  }
+  10%,
+  30% {
+    box-shadow: 0 0 14px 4px rgba(209, 66, 95, 0.5);
+  }
+  70% {
+    background: rgba(209, 66, 95, 0.3);
+    box-shadow: 0 0 0 0 rgba(209, 66, 95, 0);
+  }
+  100% {
+    background: transparent;
+    box-shadow: 0 0 0 0 rgba(209, 66, 95, 0);
+  }
+}
+
+.playerTable {
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.5rem;
+}
+
+.playerName {
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playerBank {
+  margin-left: 4px;
+  font-weight: 800;
+  color: var(--gold);
+}

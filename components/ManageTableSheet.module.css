@@ -117,3 +117,24 @@
   text-transform: uppercase;
   color: var(--gold);
 }
+
+.mergeButton {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--danger);
+  background: rgba(209, 66, 95, 0.1);
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mergeButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.warning {
+  font-size: 0.78rem;
+  color: var(--gold);
+}

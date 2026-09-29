@@ -18,6 +18,14 @@ function initialLevels(schedule) {
 export default function BlindScheduleSheet({ tournamentId, schedule, onClose, onSaved }) {
   const [startTime, setStartTime] = useState(schedule?.startTime ?? "15:00");
   const [levels, setLevels] = useState(() => initialLevels(schedule));
+  // "Kein Ende" ist bewusst keine wählbare Option mehr (Chat: "we will always
+  // have a defined rebuy phase") - ohne gespeicherten Wert defaultet die
+  // Auswahl auf das letzte Level, statt eine leere/undefinierte Auswahl zu
+  // zeigen. Der Rest der Kette (Schema, isRebuyPhaseActive) unterstützt null
+  // weiterhin, für ältere Turniere, die das Feld noch nie gesetzt haben.
+  const [rebuyEndLevelIndex, setRebuyEndLevelIndex] = useState(() =>
+    schedule?.rebuyEndLevelIndex != null ? String(schedule.rebuyEndLevelIndex) : String(levels.length)
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -65,9 +73,13 @@ export default function BlindScheduleSheet({ tournamentId, schedule, onClose, on
       return;
     }
 
+    // Levels können nach dem Setzen entfernt worden sein - auf die neue
+    // Levelanzahl begrenzen, statt ein jetzt ungültiges Level zu speichern.
+    const rebuyEnd = rebuyEndLevelIndex ? Math.min(Number(rebuyEndLevelIndex), payload.length) : null;
+
     setBusy(true);
     try {
-      await setBlindSchedule(tournamentId, { startTime, levels: payload });
+      await setBlindSchedule(tournamentId, { startTime, levels: payload, rebuyEndLevelIndex: rebuyEnd });
       onSaved();
     } catch (err) {
       setError(err.message);
@@ -167,6 +179,30 @@ export default function BlindScheduleSheet({ tournamentId, schedule, onClose, on
           <button type="button" className={styles.addRow} onClick={addLevel}>
             + Level hinzufügen
           </button>
+        </div>
+
+        {/* Chat-Wunsch: "add it to blindes setting so we can set after which
+            level rebuy is over" - ergänzt den manuellen An/Aus-Schalter in
+            "Turnier bearbeiten" um ein automatisches Ende an einem Level.
+            Pillen-Reihe statt <select> (Chat: "opens native ui style") - ein
+            natives Dropdown/der iOS-Rad-Picker sprengt die dunkle Glas-Optik
+            des Sheets, eine Pillen-Reihe bleibt im selben Look wie der Rest. */}
+        <div className={styles.section}>
+          <span className={styles.sectionLabel}>Rebuy endet nach Level</span>
+          <div className={styles.rebuyRow}>
+            {levels.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`${styles.rebuyPill} ${
+                  rebuyEndLevelIndex === String(i + 1) ? styles.rebuyPillActive : ""
+                }`}
+                onClick={() => setRebuyEndLevelIndex(String(i + 1))}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
         </div>
 
         {error && <p className={styles.error}>{error}</p>}

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db/mongodb";
 import { requireRole, canManageTable } from "@/lib/authz";
-import { seatOf, tableOrdinalFromLabel } from "@/lib/core";
+import { seatOf, tableOrdinalFromLabel, isRebuyPhaseActive } from "@/lib/core";
 
 // PATCH /api/tournaments/:tournamentId/players/:playerId/seat - Spieler
 // innerhalb SEINES aktuellen Tisches auf einen anderen Sitzplatz verschieben
@@ -19,7 +19,9 @@ export async function PATCH(request, { params }) {
   if (!tournament) {
     return NextResponse.json({ error: "Turnier nicht gefunden" }, { status: 404 });
   }
-  const allowedRoles = tournament.config.rebuyPhaseActive ? ["admin", "operator"] : ["admin"];
+  const allowedRoles = isRebuyPhaseActive(tournament.config, tournament.blindSchedule)
+    ? ["admin", "operator"]
+    : ["admin"];
   const auth = await requireRole(request, allowedRoles);
   if (auth.error) return auth.error;
 
