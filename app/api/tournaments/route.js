@@ -6,6 +6,8 @@ import {
   DEFAULT_BASELINE,
   DEFAULT_DISSOLVE_THRESHOLD,
   DEFAULT_BALANCE_DIFF_THRESHOLD,
+  DEFAULT_SMALL_TABLE_THRESHOLD,
+  DEFAULT_SMALL_TABLE_ALERT_COUNT,
 } from "@/lib/constants";
 
 function validTableSize(n) {
@@ -72,6 +74,12 @@ export async function POST(request) {
   const balanceDiffThreshold = Number.isInteger(Number(body.balanceDiffThreshold))
     ? Number(body.balanceDiffThreshold)
     : DEFAULT_BALANCE_DIFF_THRESHOLD;
+  const smallTableThreshold = Number.isInteger(Number(body.smallTableThreshold))
+    ? Number(body.smallTableThreshold)
+    : DEFAULT_SMALL_TABLE_THRESHOLD;
+  const smallTableAlertCount = Number.isInteger(Number(body.smallTableAlertCount))
+    ? Number(body.smallTableAlertCount)
+    : DEFAULT_SMALL_TABLE_ALERT_COUNT;
 
   const phasePlans = [
     { targetTables: tableCount, tableSize },
@@ -88,6 +96,8 @@ export async function POST(request) {
       baseline,
       dissolveThreshold,
       balanceDiffThreshold,
+      smallTableThreshold,
+      smallTableAlertCount,
       rebuyPhaseActive: !!body.rebuyPhaseActive,
       phasePlans,
       sequentialSeating: !!body.sequentialSeating,

@@ -85,11 +85,17 @@ Datei: `lib/db/tournamentEngine.js` (`applyMove`), `lib/server/push.js`
 ## 7. Rebuy / Spieler hinzufügen
 
 - **Admin:** darf jederzeit Spieler an jedem Tisch hinzufügen.
-- **Operator:** darf nur, solange `tournament.config.rebuyPhaseActive === true` (beim Anlegen/Bearbeiten des Turniers gesetzt), und nur am eigenen Tisch (`canManageTable`).
+- **Operator:** darf nur, solange `isRebuyPhaseActive(tournament.config, tournament.blindSchedule)` `true` liefert, und nur am eigenen Tisch (`canManageTable`).
 - Tisch muss aktiv und nicht voll sein; die Sitznummer ist entweder der angeklickte leere Kreis (`seatIndex`) oder der niedrigste freie Platz.
 - Löst **keine** Dissolve-/Balance-Prüfung aus (nur Bust-outs tun das).
 
-Datei: `app/api/tournaments/[tournamentId]/players/route.js`
+**Zwei Wege, Rebuy zu beenden** (`isRebuyPhaseActive`, siehe `lib/core/blindSchedule.js`):
+1. **Manueller Schalter:** `config.rebuyPhaseActive` - in "Turnier bearbeiten" (`TournamentEditForm`) jederzeit an-/ausschaltbar. Ist er `false`, ist Rebuy sofort komplett zu, unabhängig vom Level.
+2. **Automatisches Level-Ende:** `blindSchedule.rebuyEndLevelIndex` - **nicht** in "Turnier bearbeiten", sondern in "Blindstruktur bearbeiten" (`BlindScheduleSheet`) gesetzt, als 1-basierte Levelnummer ("Rebuy endet nach Level X"). Läuft rein über `computeEffectiveBlindState()`s `effectiveIndex`, kein Cron - sobald das Level erreicht ist, kippt `isRebuyPhaseActive` automatisch auf `false`, ohne dass der Admin manuell eingreifen muss.
+
+Beide Bedingungen sind UND-verknüpft: der manuelle Schalter kann Rebuy jederzeit vorzeitig komplett sperren, auch bevor das automatische Level-Ende erreicht ist.
+
+Datei: `app/api/tournaments/[tournamentId]/players/route.js`, `lib/core/blindSchedule.js` (`isRebuyPhaseActive`)
 
 ## 8. Phasenwechsel (Vorrunde → Halbfinale → Finale)
 
@@ -108,6 +114,8 @@ Datei: `app/api/tournaments/[tournamentId]/players/route.js`
 **Vor dem Klick:** ein Bestätigungsdialog warnt, dass die aktuelle Aufteilung verloren geht und alle Spieler neu verteilt werden.
 
 **Danach:** `activeTableId` wird zurückgesetzt (`null`), damit die Ansicht auf einen der neuen Tische fällt statt auf einen jetzt inaktiven alten.
+
+**Nicht implementiert:** ein "Top X pro Halbfinale-Tisch zieht ins Finale ein"-Modus, bei dem nur die besten X Spieler jedes Halbfinale-Tisches weiterkommen (der Rest scheidet aus). Aktuell werden beim Phasenwechsel immer **alle** noch aktiven Spieler übernommen und komplett neu gemischt, unabhängig von Chip-Stacks (die die App ohnehin nicht trackt) oder Tischplatzierung. Eine mögliche Erweiterung wäre eine Checkbox/Option beim Anlegen des Turniers (`TournamentSetupForm`), die `endPhase()` stattdessen nur die ersten X Spieler pro Quelltisch übernehmen lässt.
 
 Dateien: `lib/core/phaseTransition.js`, `lib/db/tournamentEngine.js` (`endPhase`), `lib/constants.js`, `components/BottomNav.js`
 
@@ -142,5 +150,13 @@ Admin-seitig beim Anlegen (`TournamentSetupForm`) oder nachträglich (`Tournamen
 | Finale Plätze | 8 (immer 1 Tisch) | Zielstruktur für `endPhase()` bei Index 2 |
 
 Änderungen an diesen Werten lösen **keinen** sofortigen Redraw aus - sie gelten ab dem nächsten Bust-out bzw. dem nächsten `endPhase()`-Aufruf.
+
+## 11. Operator-Accounts und Tischzuordnung
+
+Jeder Operator-Account heißt `tischN` (N = 1-8, feste Usernamen, siehe `lib/authz.js` `getRole()`). Die Zuordnung zu einem Tisch läuft **ausschließlich über die Endziffer des aktuellen Tisch-Labels** (`tableOrdinalFromLabel()`, z.B. `"Halbfinale 2"` → `"2"`), nicht über eine feste Tisch-ID - dieselbe Ziffer bestimmt sowohl das "Mein Tisch"-Bookmark (`app/page.js`) als auch `canManageTable()` (`lib/authz.js`), das serverseitig in jeder Roster-verändernden Route prüft, ob ein Operator nur an seinem eigenen Tisch handelt.
+
+**Konsequenz für Halbfinale/Finale:** die Tischzahl schrumpft (Default: 2 Halbfinale-Tische, 1 Finale-Tisch), die Operator-Accounts aber nicht. Mit den Standardwerten können nach der Vorrunde nur noch `tisch1` und `tisch2` überhaupt einen Tisch verwalten (Halbfinale), ab dem Finale nur noch `tisch1`. `tisch3`-`tisch8` haben ab dann kein "Mein Tisch" mehr und `canManageTable()` liefert für sie an jedem Tisch `false` - admin bleibt aber immer uneingeschränkt handlungsfähig (`canManageTable()` gibt für `role === "admin"` immer `true` zurück). Bei mehr konfigurierten Halbfinale-Tischen (`phasePlans[1].targetTables`) verschiebt sich das entsprechend (3 Tische → `tisch1`-`tisch3` aktiv, usw.).
+
+Dateien: `lib/authz.js` (`getRole`, `operatorTableOrdinal`, `canManageTable`), `lib/core/seating.js` (`tableOrdinalFromLabel`), `app/page.js`
 
 Datei: `lib/constants.js`, `lib/db/tournamentEngine.js` (`updateTournamentSettings`)

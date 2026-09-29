@@ -33,6 +33,8 @@ export async function PATCH(request, { params }) {
   const baseline = Number(body.baseline);
   const dissolveThreshold = Number(body.dissolveThreshold);
   const balanceDiffThreshold = Number(body.balanceDiffThreshold);
+  const smallTableThreshold = Number(body.smallTableThreshold);
+  const smallTableAlertCount = Number(body.smallTableAlertCount);
   const halbfinaleTableCount = Number(body.halbfinaleTableCount);
   const halbfinaleTableSize = Number(body.halbfinaleTableSize);
   const finaleTableSize = Number(body.finaleTableSize);
@@ -46,6 +48,12 @@ export async function PATCH(request, { params }) {
   }
   if (!Number.isInteger(balanceDiffThreshold) || balanceDiffThreshold < 1) {
     return NextResponse.json({ error: "Ungültiger Ausgleichs-Schwellwert" }, { status: 400 });
+  }
+  if (!Number.isInteger(smallTableThreshold) || smallTableThreshold < 0) {
+    return NextResponse.json({ error: "Ungültiger Schwellwert für kleine Tische" }, { status: 400 });
+  }
+  if (!Number.isInteger(smallTableAlertCount) || smallTableAlertCount < 1) {
+    return NextResponse.json({ error: "Ungültige Anzahl kleiner Tische für den Alarm" }, { status: 400 });
   }
   if (!Number.isInteger(halbfinaleTableCount) || halbfinaleTableCount < 1) {
     return NextResponse.json({ error: "Ungültige Halbfinale-Tischanzahl" }, { status: 400 });
@@ -61,6 +69,8 @@ export async function PATCH(request, { params }) {
       baseline,
       dissolveThreshold,
       balanceDiffThreshold,
+      smallTableThreshold,
+      smallTableAlertCount,
       halbfinale: { targetTables: halbfinaleTableCount, tableSize: halbfinaleTableSize },
       finale: { targetTables: 1, tableSize: finaleTableSize },
     });

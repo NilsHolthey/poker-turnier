@@ -1,0 +1,95 @@
+.ticker {
+  position: fixed;
+  /* TV-Overscan-Sicherheitsrand (Chat: "smart tvs have deadspace ... margin
+     on viewbottom top left right") - derselbe 48px-Rand wie
+     DashboardBoard.module.css .page, damit der Ticker nicht am echten
+     Bildschirmrand klebt, der auf manchen Fernsehern abgeschnitten/verdeckt
+     wird. */
+  left: 8px;
+  right: 8px;
+  bottom: 10px;
+  /* Über app/globals.css' Z-Index-Leiter: höher als der globale .fadeBottom
+     (190 in app/layout.js), sonst legt sich dessen Verlauf über den Ticker-
+     Text statt umgekehrt. */
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  padding: 0 20px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(3, 17, 13, 0.7), rgba(3, 17, 13, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.tag {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--danger);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  animation-name: news-ticker-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.segment {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.item {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Eigenes, akzentfarbenes Trennzeichen statt reinem Text-Bullet (Chat:
+   "cleare spacing or *** or icon or so between start and finish") - macht
+   sowohl Meldungsübergänge als auch die Nahtstelle der Endlosschleife klar
+   erkennbar. */
+.separator {
+  margin: 0 26px;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+@keyframes news-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+  }
+  .viewport {
+    overflow-x: auto;
+  }
+}

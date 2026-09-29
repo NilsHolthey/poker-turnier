@@ -21,6 +21,7 @@ export default function TableCapsule({
   players,
   playerCount,
   phaseName,
+  rebuyActive,
   isGlowing,
   disabled,
   removeDisabled,
@@ -171,6 +172,12 @@ export default function TableCapsule({
           <span className={styles.centerCount}>{playerCount}</span>
           <span className={styles.centerLabel}>Spieler übrig</span>
           <span className={styles.centerPhase}>{phaseName}</span>
+          {/* Chat-Wunsch: "highlight it on the table ... rebuy phase and the
+              ko phase" - macht auf einen Blick klar, ob ein Bust-out gerade
+              noch einen Rebuy erlaubt oder endgültig raus ist. */}
+          <span className={`${styles.phaseBadge} ${rebuyActive ? styles.phaseBadgeRebuy : styles.phaseBadgeKo}`}>
+            {rebuyActive ? "Rebuy-Phase" : "KO-Phase"}
+          </span>
         </div>
         {seats.map(({ seatIndex, player }) => {
           // Sobald der Drag als solcher erkannt ist (nicht schon bei jedem

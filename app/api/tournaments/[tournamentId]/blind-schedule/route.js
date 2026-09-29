@@ -27,15 +27,27 @@ export async function PUT(request, { params }) {
   const body = await request.json();
   const startTime = typeof body.startTime === "string" ? body.startTime.trim() : "";
   const levels = Array.isArray(body.levels) ? body.levels : [];
+  // 1-basiert, "Rebuy endet nach Level X" (Chat-Wunsch) - leer/null heißt kein
+  // automatisches Ende, siehe isRebuyPhaseActive() in lib/core/blindSchedule.js.
+  const rebuyEndLevelIndex =
+    body.rebuyEndLevelIndex === null || body.rebuyEndLevelIndex === undefined || body.rebuyEndLevelIndex === ""
+      ? null
+      : Number(body.rebuyEndLevelIndex);
 
   if (!startTime) return NextResponse.json({ error: "Startzeit fehlt" }, { status: 400 });
   if (levels.length === 0) return NextResponse.json({ error: "Mindestens ein Level nötig" }, { status: 400 });
   if (!levels.every(isValidLevel)) {
     return NextResponse.json({ error: "Ungültige Level-Daten" }, { status: 400 });
   }
+  if (
+    rebuyEndLevelIndex !== null &&
+    (!Number.isInteger(rebuyEndLevelIndex) || rebuyEndLevelIndex < 1 || rebuyEndLevelIndex > levels.length)
+  ) {
+    return NextResponse.json({ error: "Ungültiges Rebuy-Ende-Level" }, { status: 400 });
+  }
 
   try {
-    await setBlindSchedule(new ObjectId(tournamentId), { startTime, levels });
+    await setBlindSchedule(new ObjectId(tournamentId), { startTime, levels, rebuyEndLevelIndex });
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 400 });

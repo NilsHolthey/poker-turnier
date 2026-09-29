@@ -24,6 +24,14 @@ Diese drei Zahlen kann der Admin im Bereich "Turnier bearbeiten" anpassen:
 
 Ein Beispiel mit den Standardwerten: Tisch A hat 3 Spieler, Tisch B hat 6 Spieler. Auflösen greift nicht (3 ist mehr als die Auflöse-Schwelle 2). Ausgleichen greift, weil Tisch A kleiner als die Mindestgröße 4 ist UND der Unterschied zu Tisch B (3) mindestens 2 beträgt - ein Spieler wird von Tisch B nach Tisch A vorgeschlagen.
 
+## Wenn mehrere Tische gleichzeitig klein sind
+
+Manchmal schrumpfen mehrere Tische unabhängig voneinander auf eine kleine, aber gleich große Anzahl Spieler (z.B. mehrere Tische mit je 3 Spielern) - dann greift weder das automatische Auflösen noch der Ausgleich, weil beide auf einen Unterschied zwischen Tischen angewiesen sind. Für genau diesen Fall bekommt der Admin eine Push-Benachrichtigung, sobald zu viele Tische gleichzeitig klein sind. Ab wie vielen Tischen mit wie wenig Spielern das gemeldet wird, legt der Admin beim Anlegen oder Bearbeiten des Turniers fest.
+
+Ein Beispiel mit den Standardwerten (klein = 3 oder weniger Spieler, Alarm ab 2 solchen Tischen): Tisch A, B, C und D haben jeweils genau 3 Spieler. Auflösen greift nicht (3 ist mehr als die Auflöse-Schwelle 2). Ausgleichen greift auch nicht (alle vier Tische sind gleich groß, es gibt keinen Unterschied). Ohne die Alarm-Funktion würde die App hier einfach nichts tun, obwohl vier 3er-Tische deutlich schlechter sind als z.B. zwei volle 6er-Tische. Weil aber schon 2 kleine Tische für den Alarm reichen (hier sind es sogar 4), bekommt der Admin jetzt eine Push-Benachrichtigung und kann von Hand nachhelfen, z.B. Tisch D auflösen und auf A, B und C verteilen.
+
+Der Admin kann dann manuell einen Tisch auflösen/zusammenlegen: "Verwalten" am gewünschten Tisch öffnen, ganz unten "Tisch auflösen" antippen, bestätigen. Danach läuft es wie eine automatische Auflösung: ein Spieler nach dem anderen wird auf die übrigen Tische verteilt, jeder Zug einzeln bestätigt, am Ende eine Übersicht mit allen neuen Plätzen. Das geht mit jedem Tisch, der noch Spieler hat, nicht nur mit tatsächlich "kleinen" Tischen - der Admin kann so jederzeit manuell zusammenlegen, auch unabhängig vom Alarm.
+
 ## Wann startet das Halbfinale bzw. das Finale?
 
 **Nur wenn der Admin es manuell auslöst** - über den Button in der Navigationsleiste ("HF starten", später "Finale starten"). Es gibt keinen automatischen Wechsel nach Zeit oder Spielerzahl.
@@ -35,9 +43,15 @@ Beim Klick passiert Folgendes, sofort und ohne weitere Bestätigung:
 
 Das ist kein einzelner Auslosungsschritt wie beim Auflösen/Ausgleichen, sondern eine komplette Neu-Zuteilung auf einen Schlag. Vorher fragt die App noch einmal nach, weil die aktuelle Sitzordnung dabei verloren geht.
 
+**Noch nicht umgesetzt:** ein "nur die Top X pro Halbfinale-Tisch ziehen ins Finale ein"-Modus, bei dem der Rest ausscheidet. Aktuell kommen beim Phasenwechsel immer alle noch aktiven Spieler mit ins nächste Level, komplett neu gemischt. Das könnte man später als zusätzliche Checkbox/Option beim Anlegen des Turniers ergänzen, falls gewünscht.
+
 ## Wie kommen neue Spieler dazu?
 
 Solange die "Rebuy-Phase" aktiv ist (Standard: ja), dürfen auch die Tisch-Operatoren neue Spieler an ihrem eigenen Tisch eintragen, nicht nur der Admin. Ist die Rebuy-Phase beendet, kann nur noch der Admin neue Spieler hinzufügen. Das hat keinen Einfluss auf Auflösen/Ausgleichen - das prüft die App nur, wenn ein Spieler entfernt wird (Bust-out), nicht wenn einer dazukommt.
+
+Rebuy lässt sich auf zwei Wegen beenden: manuell über den Schalter in "Turnier bearbeiten" (jederzeit sofort), oder automatisch über "Rebuy endet nach Level X" beim Bearbeiten der Blindstruktur ("Blindstruktur bearbeiten") - sobald die Blind-Uhr dieses Level erreicht, schaltet Rebuy von selbst ab, ohne dass jemand manuell eingreifen muss. Beides kann gleichzeitig gelten: der manuelle Schalter kann Rebuy auch vorzeitig sperren, schon bevor das eingestellte Level erreicht ist.
+
+**Wichtig:** "Spieler hinzufügen" ist dafür gedacht, jemanden wieder einzutragen, der aus Versehen entfernt wurde, oder der gerade eine Hand aussetzt (z.B. kurz nicht am Tisch) - nicht dafür, komplett neue Spieler ins laufende Turnier zu holen, die vorher nicht dabei waren. Die App unterscheidet das technisch nicht, das ist reine Turnier-Regel.
 
 ## Die Blind-Uhr
 
@@ -49,3 +63,5 @@ Die Blindstruktur zu speichern startet die Uhr **nicht**. Erst der eigene "Turni
 - **Operator (Tisch-Account):** darf nur am eigenen Tisch Spieler hinzufügen (falls Rebuy aktiv), entfernen und umbenennen.
 
 Ein Operator kann also nie an einem fremden Tisch etwas verändern - das verhindert die App aktiv und zeigt einen Hinweis, falls es versucht wird.
+
+**Wichtig für Halbfinale/Finale:** die Tisch-Accounts (tisch1-tisch8) sind an die Tisch**nummer** gekoppelt, nicht an eine feste Person. Mit den Standardwerten gibt es im Halbfinale nur noch 2 Tische, im Finale nur noch 1 - dadurch können nach der Vorrunde nur noch tisch1 und tisch2 (Halbfinale) bzw. nur noch tisch1 (Finale) sich überhaupt noch einen Tisch verwalten. tisch3-tisch8 haben dann keinen Tisch mehr zugeordnet. Der Admin kann in dem Fall weiterhin jeden Tisch verwalten.

@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db/mongodb";
 import { requireRole, canManageTable } from "@/lib/authz";
 import { resolvePendingAction } from "@/lib/db/tournamentEngine";
+import { isRebuyPhaseActive } from "@/lib/core";
 
 // DELETE /api/tournaments/:tournamentId/players/:playerId - Spieler entfernen
 // (Bust-out). Policy-Wechsel gegenüber der ursprünglichen Spec ("kein
@@ -27,7 +28,11 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: "Du darfst nur deinen eigenen Tisch verwalten" }, { status: 403 });
   }
 
-  await db.collection("players").updateOne({ _id: player._id }, { $set: { status: "busted" } });
+  // bustedAt (Chat-Wunsch fürs TV-Dashboard: "highlighted red then get
+  // appended at the end greyed out") - Zeitpunkt, ab dem das Dashboard sowohl
+  // die Sortierung gebusteter Spieler als auch das kurze rote Aufblitzen rein
+  // zeitbasiert berechnen kann, ohne eigenes Client-Tracking.
+  await db.collection("players").updateOne({ _id: player._id }, { $set: { status: "busted", bustedAt: new Date() } });
 
   const pendingAction = await resolvePendingAction(tId);
   return NextResponse.json({ pendingAction });
@@ -48,7 +53,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: "Turnier nicht gefunden" }, { status: 404 });
   }
 
-  const allowedRoles = tournament.config.rebuyPhaseActive ? ["admin", "operator"] : ["admin"];
+  const allowedRoles = isRebuyPhaseActive(tournament.config, tournament.blindSchedule)
+    ? ["admin", "operator"]
+    : ["admin"];
   const auth = await requireRole(request, allowedRoles);
   if (auth.error) return auth.error;
 

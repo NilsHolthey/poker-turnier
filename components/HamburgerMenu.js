@@ -66,6 +66,9 @@ export default function HamburgerMenu({ user, onLogout }) {
           <Link href="/overview" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
             Übersicht
           </Link>
+          <Link href="/regeln" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
+            Spielregeln
+          </Link>
           {user?.role === "admin" && (
             <Link href="/admin" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
               Admin-Bereich
