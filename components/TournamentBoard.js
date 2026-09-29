@@ -471,13 +471,21 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     tableLabel: tables.find((t) => t._id === p.tableId)?.label,
   }));
   const hasNextPhase = tournament.phaseIndex < PHASES.length - 1;
-  // Chat-Wunsch: "add an alert for halbfinale reached" - state.tables enthält
-  // laut .../state/route.js schon nur aktive Tische der aktuellen Phase,
-  // also reicht die reine Länge. Nur in der Vorrunde relevant, nur für
-  // admin sichtbar (nur admin darf die Phase überhaupt starten).
+  // Chat-Wunsch: "add an alert for halbfinale reached" / Bugreport:
+  // "semifinal trigger does not work ... no alert when only 16 left" -
+  // Spielerzahl gegen HF-Gesamtkapazität statt Vorrunden-Tischzahl gegen
+  // HF-Tischzahl (siehe ausführlicher Kommentar in resolvePendingAction,
+  // lib/db/tournamentEngine.js - Tischzahl allein kann im Einfachen Modus
+  // stehenbleiben, obwohl die Spieler längst auf die HF-Tische passen).
+  // state.players enthält laut .../state/route.js schon nur aktive Spieler,
+  // players.length reicht also direkt.
   const hfTargetTables = tournament.phasePlans?.[1]?.targetTables ?? PHASES[1].targetTables;
+  const hfTableSize = tournament.phasePlans?.[1]?.tableSize ?? PHASES[1].tableSize;
   const hfReady =
-    user?.role === "admin" && tournament.phaseIndex === 0 && tables.length <= hfTargetTables && !hfReadyDismissed;
+    user?.role === "admin" &&
+    tournament.phaseIndex === 0 &&
+    players.length <= hfTargetTables * hfTableSize &&
+    !hfReadyDismissed;
   const rebuyActive = isRebuyPhaseActive(tournament.config, tournament.blindSchedule);
   // Chat-Wunsch: operator darf nur den eigenen Tisch verwalten (sonst könnten
   // Spieler an fremden Tischen umbenannt/entfernt werden) - die eigentliche
@@ -753,7 +761,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           NICHT selbst automatisch etwas. */}
       {hfReady && !confirmEndPhase && (
         <ConfirmDialog
-          message={`Nur noch ${tables.length} Tisch${tables.length === 1 ? "" : "e"} aktiv - Halbfinale kann gestartet werden.`}
+          message={`Nur noch ${players.length} Spieler aktiv - passt auf die Halbfinale-Tische, jetzt starten?`}
           confirmLabel="Jetzt starten"
           cancelLabel="Später"
           onConfirm={() => {
