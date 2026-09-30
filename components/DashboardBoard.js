@@ -151,6 +151,21 @@ function computeCapsuleSize(tablesAreaSize, rowCount, maxRowLen, scale = 1, rowG
   };
 }
 
+// Chat-Wunsch: "we need to bring back the full screen option. but this time
+// if we double click in a certain space" - kein sichtbarer Button mehr (der
+// war für die PWA-auf-iPad-Idee gedacht, siehe frühere Kommentare unten),
+// stattdessen Doppelklick irgendwo auf der sonst komplett passiven/nicht
+// interaktiven Dashboard-Fläche. Browser verlangen für die Fullscreen-API
+// eine echte Nutzergeste - ein Doppelklick zählt dafür, ein programmatischer
+// Aufruf beim Laden nicht.
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
 export default function DashboardBoard({ tournamentId, initialState }) {
   const [state, setState] = useState(initialState);
   const [now, setNow] = useState(() => Date.now());
@@ -292,9 +307,14 @@ export default function DashboardBoard({ tournamentId, initialState }) {
   return (
     // Kein <header> mehr (Chat: "remove the header for now, we do not need a
     // title or a full screen button, we will open as PWA and AirPlay from
-    // iPad") - im PWA-Standalone-Modus gibt es ohnehin keine Browser-Chrome
-    // mehr, ein eigener Vollbild-Button ist damit überflüssig.
-    <main className={`${styles.page} ${isFinale ? styles.pageFinale : ""}`}>
+    // iPad" - dieser Plan ist inzwischen verworfen, siehe toggleFullscreen
+    // oben: Vollbild kommt jetzt per Doppelklick zurück statt über einen
+    // eigenen sichtbaren Button, der Rest (kein Titel/Header) bleibt aber so,
+    // passt weiterhin zum bewusst chromfreien TV-Look).
+    <main
+      className={`${styles.page} ${isFinale ? styles.pageFinale : ""}`}
+      onDoubleClick={toggleFullscreen}
+    >
       {/* Chat-Wunsch: "player list on the left side, blindes on the right
           side" - Tische bleiben in der Mitte als Hauptfläche, die beiden
           Listen rahmen sie links/rechts statt zusammen in einer Sidebar zu
