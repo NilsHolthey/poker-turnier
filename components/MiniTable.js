@@ -46,7 +46,17 @@ export default function MiniTable({ table, players, active = true, capsuleSize, 
   const ordinal = tableOrdinalFromLabel(table.label);
   const { width: capsuleWidth, height: capsuleHeight, slotWidth } = capsuleSize || DEFAULT_CAPSULE_SIZE;
 
-  const circleDiameter = Math.max(12 * scale, Math.min(46 * scale, capsuleWidth * 0.28));
+  // finale: Kreise bewusst NICHT mit demselben (0.5-)scale wie die Kapsel
+  // mitschrumpfen lassen (Chat-Wunsch: "need to increase the player circle
+  // on final table view") - beim Finale ist üblicherweise nur noch 1 Tisch
+  // mit wenigen Spielern aktiv, also reichlich Platz frei; ein größeres
+  // Verhältnis (0.38 statt 0.22) UND eine ungeschrumpfte obere Klammer
+  // (circleScale 1 statt scale) sorgen dafür, dass die Kreise trotz der um
+  // die Hälfte verkleinerten Kapsel (siehe capsuleScale in
+  // DashboardBoard.js) spürbar größer werden statt proportional mit runter.
+  const circleRatio = finale ? 0.38 : 0.22;
+  const circleScale = finale ? 1 : scale;
+  const circleDiameter = Math.max(12 * circleScale, Math.min(46 * circleScale, capsuleWidth * circleRatio));
   const circleFontSize = circleDiameter * 0.4;
   const nameFontSize = circleDiameter * 0.34;
   const nameMaxWidth = capsuleWidth * 1.05;

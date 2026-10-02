@@ -126,6 +126,8 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   // 8s-Poll), unabhängig vom serverseitigen Push-Dedup-Flag
   // (halbfinaleReadyAlertSent in tournamentEngine.js).
   const [hfReadyDismissed, setHfReadyDismissed] = useState(false);
+  // Gleiches Muster eine Phase weiter (Chat-Wunsch: "add it also for finale").
+  const [finaleReadyDismissed, setFinaleReadyDismissed] = useState(false);
   // Kurzer Hinweis-Toast, wenn ein Operator einen Spieler an einem fremden
   // Tisch entfernen will (Chat-Wunsch). id sorgt dafür, dass ein zweiter Tap
   // innerhalb der Anzeigedauer den Toast neu startet.
@@ -486,6 +488,14 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     tournament.phaseIndex === 0 &&
     players.length <= hfTargetTables * hfTableSize &&
     !hfReadyDismissed;
+  // Gleiche Logik eine Phase weiter (Chat-Wunsch: "add it also for finale").
+  const finaleTargetTables = tournament.phasePlans?.[2]?.targetTables ?? PHASES[2].targetTables;
+  const finaleTableSize = tournament.phasePlans?.[2]?.tableSize ?? PHASES[2].tableSize;
+  const finaleReady =
+    user?.role === "admin" &&
+    tournament.phaseIndex === 1 &&
+    players.length <= finaleTargetTables * finaleTableSize &&
+    !finaleReadyDismissed;
   const rebuyActive = isRebuyPhaseActive(tournament.config, tournament.blindSchedule);
   // Chat-Wunsch: operator darf nur den eigenen Tisch verwalten (sonst könnten
   // Spieler an fremden Tischen umbenannt/entfernt werden) - die eigentliche
@@ -769,6 +779,19 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
             handleEndPhase();
           }}
           onCancel={() => setHfReadyDismissed(true)}
+        />
+      )}
+
+      {finaleReady && !confirmEndPhase && (
+        <ConfirmDialog
+          message={`Nur noch ${players.length} Spieler aktiv - passt auf den Finaltisch, jetzt starten?`}
+          confirmLabel="Jetzt starten"
+          cancelLabel="Später"
+          onConfirm={() => {
+            setFinaleReadyDismissed(true);
+            handleEndPhase();
+          }}
+          onCancel={() => setFinaleReadyDismissed(true)}
         />
       )}
 

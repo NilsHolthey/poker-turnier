@@ -66,6 +66,9 @@ export default function HamburgerMenu({ user, onLogout }) {
           <Link href="/overview" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
             Übersicht
           </Link>
+          <Link href="/players" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
+            Spielerliste
+          </Link>
           <Link href="/regeln" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
             Spielregeln
           </Link>
@@ -73,6 +76,18 @@ export default function HamburgerMenu({ user, onLogout }) {
             <Link href="/admin" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
               Admin-Bereich
             </Link>
+          )}
+          {user?.role === "admin" && (
+            // Normales <a target="_blank"> statt next/link (Chat-Wunsch: "open
+            // that list normal on browser not as installed pwa than create a
+            // screenshot of full page and share it") - aus einer installierten
+            // Standalone-PWA heraus öffnet ein target="_blank"-Link auf
+            // iOS/Android zuverlässig im normalen Browser-Tab statt im
+            // PWA-Shell-Fenster, Client-seitiges next/link-Routing bliebe
+            // dagegen innerhalb der PWA.
+            <a href="/players/print" target="_blank" rel="noopener noreferrer" className={styles.item} role="menuitem" onClick={() => setOpen(false)}>
+              Sitzplan teilen
+            </a>
           )}
           <span className={styles.divider} />
           <button

@@ -166,11 +166,50 @@ function toggleFullscreen() {
   }
 }
 
+// Chat-Wunsch: "if I toggle to fullscreen I want the cursor to disappear
+// after 3 sec" - nur in Fullscreen relevant, nicht im normalen Browserfenster
+// (da würde ein verschwindender Mauszeiger beim Admin-Arbeiten nur stören).
+const CURSOR_IDLE_MS = 3000;
+
 export default function DashboardBoard({ tournamentId, initialState }) {
   const [state, setState] = useState(initialState);
   const [now, setNow] = useState(() => Date.now());
+  const [fullscreen, setFullscreen] = useState(false);
+  const [cursorHidden, setCursorHidden] = useState(false);
   const tablesAreaRef = useRef(null);
   const [tablesAreaSize, setTablesAreaSize] = useState(null);
+
+  // fullscreenchange statt nur im onDoubleClick-Handler selbst zu tracken -
+  // deckt auch ein Verlassen per Esc/Fernbedienung ab, nicht nur den erneuten
+  // Doppelklick.
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setFullscreen(!!document.fullscreenElement);
+      // Beim Verlassen sofort wieder sichtbar statt bis zur nächsten
+      // Mausbewegung versteckt zu bleiben.
+      setCursorHidden(false);
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // Versteckt den Mauszeiger nach CURSOR_IDLE_MS Inaktivität, nur während
+  // Fullscreen - jede Mausbewegung zeigt ihn sofort wieder und setzt den
+  // Timer zurück (klassisches Kiosk-/Player-Verhalten).
+  useEffect(() => {
+    if (!fullscreen) return;
+    let timer = setTimeout(() => setCursorHidden(true), CURSOR_IDLE_MS);
+    function handleMouseMove() {
+      setCursorHidden(false);
+      clearTimeout(timer);
+      timer = setTimeout(() => setCursorHidden(true), CURSOR_IDLE_MS);
+    }
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      clearTimeout(timer);
+    };
+  }, [fullscreen]);
 
   // Misst die ECHTE verfügbare Fläche statt CSS-Prozentwerte zu erraten
   // (siehe computeCapsuleSize oben) - läuft bei jeder Größenänderung neu
@@ -208,6 +247,10 @@ export default function DashboardBoard({ tournamentId, initialState }) {
   const nextLevel = schedule && effective ? schedule.levels[effective.effectiveIndex + 1] ?? null : null;
   const rebuyActive = isRebuyPhaseActive(tournament.config, schedule, now);
   const rebuyRemaining = rebuyRemainingMs(tournament.config, schedule, now);
+  // Chat-Wunsch: "total tournament clock" - firstStartedAt wird nur beim
+  // allerersten startBlindClock() gesetzt und bleibt über Levelwechsel/Pausen
+  // hinweg stehen (siehe tournamentEngine.js), anders als currentLevelStartedAt.
+  const tournamentElapsedMs = schedule?.firstStartedAt ? now - new Date(schedule.firstStartedAt).getTime() : null;
 
   const sortedTables = [...tables].sort((a, b) => a.label.localeCompare(b.label, "de"));
   const tableRows = chunkTablesIntoRows(sortedTables);
@@ -312,7 +355,7 @@ export default function DashboardBoard({ tournamentId, initialState }) {
     // eigenen sichtbaren Button, der Rest (kein Titel/Header) bleibt aber so,
     // passt weiterhin zum bewusst chromfreien TV-Look).
     <main
-      className={`${styles.page} ${isFinale ? styles.pageFinale : ""}`}
+      className={`${styles.page} ${isFinale ? styles.pageFinale : ""} ${cursorHidden ? styles.cursorHidden : ""}`}
       onDoubleClick={toggleFullscreen}
     >
       {/* Chat-Wunsch: "player list on the left side, blindes on the right
@@ -340,6 +383,17 @@ export default function DashboardBoard({ tournamentId, initialState }) {
                       {shortName(p.name)}
                       {p.isBank && <span className={styles.playerBank}>$</span>}
                     </span>
+                    {/* Chat-Wunsch: "add the seat number so its easier to
+                        find your spot, right side of the pill" / "but only
+                        for active players" - ein gebusteter Spieler sitzt an
+                        keinem Platz mehr, p.num bliebe sonst der zuletzt
+                        belegte (und evtl. inzwischen von jemand anderem
+                        besetzte) Platz. */}
+                    {!busted && (
+                      <span className={styles.playerSeat} style={{ color: tableById.get(p.tableId)?.color }}>
+                        {p.num}
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -383,7 +437,10 @@ export default function DashboardBoard({ tournamentId, initialState }) {
             // in size by 50%" - phaseIndex 1 = PHASES[1] = Halbfinale.
             // isFinale kommt jetzt von Komponentenebene oben.
             const isHf = tournament.phaseIndex === 1;
-            const capsuleScale = isHf ? 2 / 3 : isFinale ? 0.5 : 1;
+            // Chat-Wunsch: "reduce the table size minimal" - 0.9 statt 1 als
+            // Vorrunde-Default (HF/Finale-Werte bleiben eigene, unabhängige
+            // Multiplikatoren, nicht relativ zu diesem).
+            const capsuleScale = isHf ? 2 / 3 : isFinale ? 0.5 : 0.9;
             const rowGap = isHf ? HF_ROW_GAP : ROW_GAP;
             const capsuleSize = computeCapsuleSize(tablesAreaSize, tableRows.length, maxRowLen, capsuleScale, rowGap);
             return tableRows.map((rowTables, i) => (
@@ -451,6 +508,15 @@ export default function DashboardBoard({ tournamentId, initialState }) {
                   {effective.started ? formatHMS(effective.remainingMs) : "--:--"}
                 </span>
               </div>
+              {/* Chat-Wunsch: "total tournament clock" - Gesamtlaufzeit statt
+                  nur der Level-Restzeit, eigene Zeile statt eigenes Panel, da
+                  im blindNowPanel noch Platz war. */}
+              {tournamentElapsedMs != null && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Turnier läuft seit</span>
+                  <span className={styles.infoValue}>{formatHM(tournamentElapsedMs)}</span>
+                </div>
+              )}
             </section>
           )}
         </div>
