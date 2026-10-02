@@ -4,6 +4,7 @@
    TV-eigene Auflösung/Skalierung übernimmt AirPlay/HDMI erledigt das Scaling,
    nicht diese Seite. */
 .page {
+  
   /* height + overflow:hidden statt min-height (Chat: "there should never be
      scroll ... we need to work with vh and percentage here") - der erste
      Versuch scheiterte nicht an height:100dvh selbst, sondern daran, dass
@@ -30,6 +31,32 @@
   /* Für .pageFinale unten - weiches Abdunkeln statt eines harten Umschlags
      beim Phasenwechsel. */
   transition: background-color 1s ease;
+  /* Chat-Wunsch: "move it up ... no wait down I think" - eigenes
+     Hintergrundbild nur für .page statt body::before (app/globals.css) zu
+     ändern, sonst bewegt sich das Bild auf JEDER Seite der App mit, nicht
+     nur im Dashboard. Revert (Chat: "revert put it back here" - die separate
+     .backgroundImage-div-Variante hatte einen Seiteneffekt auf die
+     Tischgrößen und wurde zurückgenommen) - Foto wieder direkt Teil von
+     .page's eigenem background statt eines eigenen Elements.
+     Erste (oberste) Ebene: subtiler dunkler Verlauf von unten nach oben
+     (Chat-Wunsch: "subtle dark gradient from bottom up") - dunkelt den
+     unteren Bereich, wo der News-Ticker sitzt, zusätzlich leicht ab und
+     verläuft nach oben hin in Transparenz, statt gleichmäßig über die ganze
+     Höhe wie der bestehende lineare Verlauf darunter. */
+  background:
+    linear-gradient(to top, rgba(3, 17, 13, 0.902), transparent 45%),
+    radial-gradient(ellipse at top, rgba(90, 15, 40, 0.4), transparent 60%),
+    linear-gradient(rgba(3, 17, 13, 0.6), rgba(3, 17, 13, 0.92)),
+    url("/images/poker-background.jpg") center 58.5% / cover no-repeat;
+}
+
+/* Chat-Wunsch: "if I toggle to fullscreen I want the cursor to disappear
+   after 3 sec" - cursor:none auf dem gesamten .page-Element, DashboardBoard.js
+   steuert per fullscreen+mousemove-Timer (CURSOR_IDLE_MS), wann diese Klasse
+   dazukommt/verschwindet. Nur in Fullscreen aktiv, siehe dort. */
+.cursorHidden,
+.cursorHidden * {
+  cursor: none;
 }
 
 /* Chat-Wunsch: "if final table is reached ... background gets slightly
@@ -38,11 +65,16 @@
    bleiben. Der goldene Glow selbst sitzt an der Kapsel, siehe
    MiniTable.module.css .finale. */
 .pageFinale {
+  transition:all 0.3;
   background-color: rgba(0, 0, 0, 0.4);
   /* Chat-Wunsch: "very subtle golden gradient to background color" - separates
      background-image statt Teil von .page's transitionierter background-color,
      ein sanfter Radial-Schimmer von oben statt eines flächigen Farbtons. */
-  background-image: radial-gradient(ellipse 90% 60% at 50% 0%, rgba(163, 133, 96, 0.07), transparent 65%);
+  background: radial-gradient(ellipse 90% 60% at 50% 0%, rgba(163, 133, 96, 0.07), transparent 65%),
+    linear-gradient(rgba(3, 17, 13, 0.6), rgba(1, 7, 6, 0.92)),
+      url("/images/poker-background.jpg") center 58.5% / cover no-repeat;
+
+  ;
 }
 
 /* 1fr 3fr 1fr statt fester Pixelbreiten für die Seitenspalten (Chat: "use
@@ -50,6 +82,7 @@
    mit, statt bei jeder Screen-Größe neu als Pixelwert geraten zu werden;
    Tische bekommen dadurch automatisch den Löwenanteil der Breite. */
 .body {
+  margin-top: 12px;
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 3fr 1fr;
@@ -70,7 +103,8 @@
   grid-template-rows: repeat(var(--row-count), 1fr);
   /* MUSS mit ROWS_GAP in DashboardBoard.js übereinstimmen - dieselbe
      Kopplung wie beim .tableRow-Gap unten. */
-  gap: 20px;
+  row-gap: 0px;
+  column-gap: 20px;
   min-width: 0;
   min-height: 0;
 }
@@ -179,7 +213,7 @@
 
 .statsPanel {
   flex: 1;
-  min-height: 0;
+  min-height: 300px;
   justify-content: center;
 }
 
@@ -198,7 +232,7 @@
 }
 
 .bigStatValue {
-  font-size: 1rem;
+  font-size: 2.8rem;
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -212,7 +246,7 @@
    should be way bigger") - nur die Spielerzahl, nicht der (längere)
    Blind-Textwert, der sonst in der schmalen Spalte umbrechen würde. */
 .playerCountValue {
-  font-size: 1.6rem;
+  font-size: 5.6rem;
 }
 
 .bigStatLabel {
@@ -229,12 +263,12 @@
 }
 
 .infoLabel {
-  font-size: 0.7rem;
+  font-size: 1rem;
   color: var(--text-muted);
 }
 
 .infoValue {
-  font-size: 0.7rem;
+  font-size: 01rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text);
@@ -323,16 +357,16 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .blindDuration {
-  font-size: 0.6rem;
+  font-size: 1rem;
   color: var(--text-muted);
 }
 
 .blindTime {
-  font-size: 0.52rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -342,6 +376,7 @@
    unten befüllt wird und erst dann in die zweite Spalte umbricht, wie bei
    einer Zeitungsspalte. */
 .playerList {
+  padding-top: 5px;
   flex: 1;
   column-count: 2;
   column-gap: 4px;
@@ -351,11 +386,11 @@
 .playerRow {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px;
+  gap: 3px;
+  padding: 5px;
   margin-bottom: 2px;
   border-radius: 8px;
-  font-size: 0.5rem;
+  font-size: 0.8rem;
   /* Verhindert, dass eine Zeile mitten im Spaltenumbruch auseinandergerissen wird. */
   break-inside: avoid;
   /* Sanfter Übergang statt hartem Sprung, wenn eine Zeile von aktiv auf
@@ -372,7 +407,7 @@
    ausgegraut und durchgestrichen, landen aber immer sortiert nach bustedAt
    am Ende (siehe sortedPlayers in DashboardBoard.js). */
 .playerBusted {
-  opacity: 0.4;
+  opacity: 0.3;
 }
 
 .playerBusted .playerName {
@@ -427,7 +462,7 @@
   width: 15px;
   text-align: center;
   font-weight: 700;
-  font-size: 0.5rem;
+  font-size: 0.7rem;
 }
 
 .playerName {
@@ -441,4 +476,15 @@
   margin-left: 4px;
   font-weight: 800;
   color: var(--gold);
+}
+
+/* Chat-Wunsch: "add the seat number so its easier to find your spot, right
+   side of the pill" - margin-left:auto schiebt sie an den rechten Rand der
+   Zeile, unabhängig davon, wie lang der Name links ist. */
+.playerSeat {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
 }

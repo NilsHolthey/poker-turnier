@@ -1,0 +1,87 @@
+/* Bewusst "basic" (Chat-Wunsch: "more basic design no backdropfilter eg
+   because if I create a screenshot it will not get grabed") - kein
+   glassChrome, kein backdrop-filter, kein transparentes/foto-Hintergrund
+   (siehe body::before in app/globals.css), nur flache Farben/Kanten. Soll
+   zuverlässig als Ganzseiten-Screenshot im normalen Browser (nicht die
+   installierte PWA) geteilt werden können. */
+.page {
+  position: relative;
+  z-index: 0;
+  min-height: 100dvh;
+  background: var(--background);
+  padding: max(28px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+}
+
+.subtitle {
+  margin-top: 2px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.group {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.groupTitle {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table tr:not(:first-child) td {
+  border-top: 1px solid var(--border);
+}
+
+.name {
+  padding: 7px 12px;
+  text-align: left;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.bank {
+  margin-left: 5px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+/* Eigene, feste Spalte statt rechtsbündig im Flex-Rest (siehe Kommentar in
+   page.js) - white-space:nowrap verhindert, dass "Platz 10.2" an schmalen
+   Karten umbricht und die Spaltenbreite dadurch verzerrt. */
+.seat {
+  padding: 7px 12px;
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
