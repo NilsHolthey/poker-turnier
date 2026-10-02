@@ -9,8 +9,14 @@
   z-index: 0;
   min-height: 100dvh;
   background: var(--background);
-  padding: max(28px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom))
-    max(20px, env(safe-area-inset-left));
+  /* unten: 110px extra statt nur safe-area (Chat: "bottom gradient ... just
+     a green block and covers like the last three players") - app/layout.js
+     rendert .fadeBottom (app/globals.css, fixed, 110px hoch) auf JEDER Seite
+     fürs Einblenden in die BottomNav-Pille, die es auf dieser Seite gar
+     nicht gibt. Hier einfach genug Platz lassen, damit kein Spieler darunter
+     landet, statt den globalen Fade selbst anzufassen. */
+  padding: max(28px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+    calc(110px + max(28px, env(safe-area-inset-bottom))) max(20px, env(safe-area-inset-left));
 }
 
 .title {

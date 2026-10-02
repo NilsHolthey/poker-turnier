@@ -7,6 +7,7 @@ import BlindScheduleSheet from "./BlindScheduleSheet";
 import ConfirmDialog from "./ConfirmDialog";
 import PushToggle from "./PushToggle";
 import TournamentEditForm from "./TournamentEditForm";
+import PresencePanel from "./PresencePanel";
 import { deleteTournament, startBlindClock, resetBlindClock } from "@/lib/client/api";
 import { formatBlindLevel, computeEffectiveBlindState } from "@/lib/core";
 import styles from "./AdminBoard.module.css";
@@ -136,6 +137,16 @@ export default function AdminBoard({ tournamentId, tournamentName, schedule, set
           </div>
         )}
         {deleteError && <p className={styles.error}>{deleteError}</p>}
+      </section>
+
+      {/* Chat-Wunsch: "admin ... site where we see which users are
+          currently logged in. I can see activity on auth0 dashboard but is
+          there a way to display it on app as admin" - unabhängig von einem
+          laufenden Turnier sichtbar, da es um die 9 festen Accounts geht,
+          nicht um Turnierdaten. */}
+      <section className={styles.card}>
+        <h2 className={styles.cardTitle}>Wer ist online</h2>
+        <PresencePanel />
       </section>
 
       {tournamentId && settings && (
