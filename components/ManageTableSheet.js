@@ -18,6 +18,7 @@ export default function ManageTableSheet({
   onClose,
   isAdmin,
   onMerge,
+  onRemoveSeat,
   existingPlayers = [],
   busy,
 }) {
@@ -115,6 +116,23 @@ export default function ManageTableSheet({
           Tische unabhängig auf dieselbe kleine Größe geschrumpft, siehe
           smallTableAlertSent-Push). Admin-only, onMerge fehlt außerdem, wenn
           es keinen anderen aktiven Tisch zum Zusammenlegen gibt. */}
+      {/* docs/table-size-kickoff-prompt.md, §3: Tisch während der laufenden
+          Vorrunde wieder Richtung 8×6 schrumpfen, sobald Spieler
+          ausgeschieden sind - "nur aktiv wenn players.length < table.maxSeats"
+          (sonst gäbe es gar keinen freien Platz zum Entfernen). */}
+      {isAdmin && onRemoveSeat && (
+        <div className={styles.section}>
+          <button
+            type="button"
+            className={styles.removeSeatButton}
+            onClick={onRemoveSeat}
+            disabled={busy || players.length >= table.maxSeats}
+          >
+            Platz entfernen ({table.maxSeats} → {table.maxSeats - 1})
+          </button>
+        </div>
+      )}
+
       {isAdmin && onMerge && (
         <div className={styles.section}>
           <button type="button" className={styles.mergeButton} onClick={onMerge} disabled={busy}>

@@ -16,10 +16,14 @@ import styles from "./TournamentSetupForm.module.css";
 // Tischanzahl/-größe verteilen (spec-Lücke - es gab bisher keinen Weg, ein
 // Turnier überhaupt anzulegen). Nach Erfolg reicht ein Reload, da page.js
 // serverseitig immer das zuletzt angelegte Turnier lädt.
+// docs/table-size-kickoff-prompt.md, §1: individuelle Tischgröße (6/7/8) pro
+// Tisch statt eines einzigen globalen tableCount/tableSize-Paars - z.B. 50
+// Spieler = 2×7 + 6×6.
+const VORRUNDE_TABLE_SIZES = [6, 7, 8];
+
 export default function TournamentSetupForm() {
   const [name, setName] = useState("Freundes-Pokerturnier");
-  const [tableCount, setTableCount] = useState(8);
-  const [tableSize, setTableSize] = useState(6);
+  const [tables, setTables] = useState(() => Array.from({ length: 8 }, () => ({ size: 6 })));
   const [names, setNames] = useState(() => Array.from({ length: 6 }, () => ""));
   const [rebuyPhaseActive, setRebuyPhaseActive] = useState(true);
   const [sequentialSeating, setSequentialSeating] = useState(false);
@@ -43,7 +47,8 @@ export default function TournamentSetupForm() {
   const [error, setError] = useState(null);
 
   const playerNames = names.map((n) => n.trim()).filter(Boolean);
-  const capacity = Number(tableCount) * Number(tableSize);
+  const tableSizes = tables.map((t) => Number(t.size));
+  const capacity = tableSizes.reduce((sum, size) => sum + size, 0);
 
   function updateName(index, value) {
     setNames((prev) => prev.map((n, i) => (i === index ? value : n)));
@@ -57,11 +62,29 @@ export default function TournamentSetupForm() {
     setNames((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function addTable() {
+    setTables((prev) => [...prev, { size: 6 }]);
+  }
+
+  function removeTable(index) {
+    setTables((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateTableSize(index, size) {
+    setTables((prev) => prev.map((t, i) => (i === index ? { size } : t)));
+  }
+
   // Sitznummer "Tisch.Platz" für Listenposition i, wenn Spieler der Reihe nach
-  // auf die Tische verteilt werden (Tisch 1 Plätze 1..n, dann Tisch 2, ...).
+  // auf die Tische verteilt werden (Tisch 1 Plätze 1..n, dann Tisch 2, ...) -
+  // läuft die kumulierten, INDIVIDUELLEN Tischgrößen ab statt eine einzige
+  // globale Größe zu multiplizieren (docs/table-size-kickoff-prompt.md, §1).
   function seatLabel(i) {
-    const size = Number(tableSize) || 1;
-    return `${Math.floor(i / size) + 1}.${(i % size) + 1}`;
+    let remaining = i;
+    for (let t = 0; t < tableSizes.length; t++) {
+      if (remaining < tableSizes[t]) return `${t + 1}.${remaining + 1}`;
+      remaining -= tableSizes[t];
+    }
+    return `${tableSizes.length || 1}.${remaining + 1}`;
   }
 
   // Chat-Wunsch: "auto fill" - Spieler heißen "Spieler 1.1", "Spieler 1.2", ...
@@ -87,7 +110,7 @@ export default function TournamentSetupForm() {
       return;
     }
     if (playerNames.length > capacity) {
-      setError(`${playerNames.length} Spieler passen nicht auf ${capacity} Plätze (${tableCount} × ${tableSize}).`);
+      setError(`${playerNames.length} Spieler passen nicht auf ${capacity} Plätze (${tableSizes.join(" + ")}).`);
       return;
     }
 
@@ -95,8 +118,7 @@ export default function TournamentSetupForm() {
     try {
       await createTournament({
         name,
-        tableCount: Number(tableCount),
-        tableSize: Number(tableSize),
+        tableSizes,
         playerNames,
         rebuyPhaseActive,
         sequentialSeating,
@@ -124,30 +146,47 @@ export default function TournamentSetupForm() {
         <input value={name} onChange={(e) => setName(e.target.value)} required />
       </label>
 
-      <div className={styles.row}>
-        <label className={styles.field}>
-          Anzahl Tische
-          <input
-            type="number"
-            min="1"
-            value={tableCount}
-            onChange={(e) => setTableCount(e.target.value)}
-            required
-          />
-        </label>
-        <label className={styles.field}>
-          Plätze pro Tisch
-          <input
-            type="number"
-            min="2"
-            max="10"
-            value={tableSize}
-            onChange={(e) => setTableSize(e.target.value)}
-            required
-          />
-        </label>
+      {/* Individuelle Tischgröße pro Tisch statt eines globalen Paars
+          (docs/table-size-kickoff-prompt.md, §1) - Pillen statt <select>
+          (gleicher Grund wie überall sonst in der App: ein natives Dropdown
+          lässt sich nicht ins dunkle Glas-Design einpassen). */}
+      <div className={styles.field}>
+        <span>Tische</span>
+        <div className={styles.tableRows}>
+          {tables.map((t, i) => (
+            <div key={i} className={styles.tableRow}>
+              <span className={styles.tableIndex}>Tisch {i + 1}</span>
+              <div className={styles.sizePills}>
+                {VORRUNDE_TABLE_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    className={`${styles.sizePill} ${t.size === size ? styles.sizePillActive : ""}`}
+                    onClick={() => updateTableSize(i, size)}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={styles.removeRow}
+                onClick={() => removeTable(i)}
+                disabled={tables.length <= 1}
+                aria-label="Tisch entfernen"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+        <button type="button" className={styles.addRow} onClick={addTable}>
+          + Tisch hinzufügen
+        </button>
       </div>
-      <p className={styles.hint}>Kapazität: {capacity} Plätze</p>
+      <p className={styles.hint}>
+        Kapazität: {capacity} Plätze ({tables.length} Tische)
+      </p>
 
       <div className={styles.field}>
         <span>Spieler (der erste ist die Bank)</span>
