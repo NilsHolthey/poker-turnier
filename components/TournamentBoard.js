@@ -29,6 +29,7 @@ import {
   pauseBlindClock,
   resumeBlindClock,
   mergeTable,
+  removeTableSeat,
 } from "@/lib/client/api";
 import { PHASES } from "@/lib/constants";
 import { isRebuyPhaseActive, tableOrdinalFromLabel } from "@/lib/core";
@@ -105,6 +106,10 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   // sitzt in ManageTableSheet, Bestätigung hier wie bei den übrigen
   // destruktiven Aktionen (confirmRemovePlayer/confirmEndPhase).
   const [confirmMergeTable, setConfirmMergeTable] = useState(false);
+  // docs/table-size-kickoff-prompt.md, §3: "Platz entfernen" - gleiche
+  // Bestätigungs-Konvention wie confirmMergeTable, auch wenn es hier nicht um
+  // einen Spieler-Zug geht, sondern nur um eine Kapazitätsänderung.
+  const [confirmRemoveSeat, setConfirmRemoveSeat] = useState(false);
   // { tableId, seatIndex } solange der Namens-Dialog für einen neuen Spieler
   // offen ist (Chat-Bugreport: Default-Namen-Kollision, siehe handleQuickAdd).
   const [addPlayerPrompt, setAddPlayerPrompt] = useState(null);
@@ -128,10 +133,13 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   const [hfReadyDismissed, setHfReadyDismissed] = useState(false);
   // Gleiches Muster eine Phase weiter (Chat-Wunsch: "add it also for finale").
   const [finaleReadyDismissed, setFinaleReadyDismissed] = useState(false);
-  // Kurzer Hinweis-Toast, wenn ein Operator einen Spieler an einem fremden
-  // Tisch entfernen will (Chat-Wunsch). id sorgt dafür, dass ein zweiter Tap
-  // innerhalb der Anzeigedauer den Toast neu startet.
-  const [denyToast, setDenyToast] = useState(null);
+  // Kurzer, unaufdringlicher Hinweis-Toast - ursprünglich nur für den
+  // Operator-Deny-Fall (Spieler an fremdem Tisch entfernen), jetzt generisch
+  // für jedes kurze Nach-Aktion-Feedback (z.B. "Platz entfernt", Chat-Wunsch:
+  // "after removing a seat ... a confirmation would be good, just a popup").
+  // id sorgt dafür, dass ein zweiter Tap innerhalb der Anzeigedauer den
+  // Toast neu startet.
+  const [toast, setToast] = useState(null);
   // Sammelt die einzelnen Umsetzungen einer Tisch-Auflösung, damit am Ende EIN
   // Übersichts-Popup gezeigt werden kann (Chat-Wunsch).
   const dissolveLogRef = useRef([]);
@@ -143,10 +151,10 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   const [slideDirection, setSlideDirection] = useState(null);
 
   useEffect(() => {
-    if (!denyToast) return;
-    const timer = setTimeout(() => setDenyToast(null), 2200);
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(timer);
-  }, [denyToast]);
+  }, [toast]);
 
   async function reload() {
     const data = await fetchTournamentState(tournamentId);
@@ -259,7 +267,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     const player = players.find((p) => p._id === playerId);
     const playerTable = tables.find((t) => t._id === player?.tableId);
     if (!canManageTable(playerTable)) {
-      setDenyToast((prev) => ({ id: (prev?.id ?? 0) + 1, text: "Du kannst nur Spieler an deinem Tisch löschen" }));
+      setToast((prev) => ({ id: (prev?.id ?? 0) + 1, text: "Du kannst nur Spieler an deinem Tisch löschen" }));
       return;
     }
     setConfirmRemovePlayer({ playerId, name: player?.name ?? "Spieler" });
@@ -442,6 +450,28 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
       const { pendingAction: next } = await mergeTable(tournamentId, tableId);
       const data = await reload();
       if (next) await processPendingAction(next, data);
+    });
+  }
+
+  function handleRemoveSeat() {
+    setConfirmRemoveSeat(true);
+  }
+
+  function confirmRemoveSeatAction() {
+    const tableId = manageTableId;
+    const table = tables.find((t) => t._id === tableId);
+    setConfirmRemoveSeat(false);
+    if (!tableId) return;
+    runAction(async () => {
+      await removeTableSeat(tournamentId, tableId);
+      await reload();
+      // Chat-Wunsch: "after removing a seat ... a confirmation would be
+      // good, just a popup" - kurzes Nach-Aktion-Feedback, kein weiterer
+      // Bestätigungsdialog (den gibt es schon VORHER, siehe confirmRemoveSeat).
+      setToast((prev) => ({
+        id: (prev?.id ?? 0) + 1,
+        text: `${table?.label ?? "Tisch"}: ${table?.maxSeats} → ${(table?.maxSeats ?? 1) - 1} Plätze`,
+      }));
     });
   }
 
@@ -688,6 +718,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           onClose={() => setManageTableId(null)}
           isAdmin={user?.role === "admin"}
           onMerge={tables.length > 1 ? handleMergeTable : undefined}
+          onRemoveSeat={handleRemoveSeat}
           existingPlayers={activePlayersWithTable}
           busy={busy}
         />
@@ -713,6 +744,15 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           danger
           onConfirm={confirmMergeTableAction}
           onCancel={() => setConfirmMergeTable(false)}
+        />
+      )}
+
+      {confirmRemoveSeat && (
+        <ConfirmDialog
+          message={`"${manageTable?.label}" von ${manageTable?.maxSeats} auf ${manageTable?.maxSeats - 1} Plätze verkleinern?`}
+          confirmLabel="Entfernen"
+          onConfirm={confirmRemoveSeatAction}
+          onCancel={() => setConfirmRemoveSeat(false)}
         />
       )}
 
@@ -795,7 +835,7 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
         />
       )}
 
-      {denyToast && <Toast key={denyToast.id} text={denyToast.text} />}
+      {toast && <Toast key={toast.id} text={toast.text} />}
 
       {confirmLogout && (
         <ConfirmDialog

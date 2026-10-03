@@ -14,6 +14,10 @@ function validTableSize(n) {
   return Number.isInteger(n) && n >= 2 && n <= 10;
 }
 
+// docs/table-size-kickoff-prompt.md, §1: individuelle Tischgrößen (6/7/8) pro
+// Vorrunde-Tisch statt eines globalen tableCount/tableSize-Paars.
+const VALID_VORRUNDE_SIZES = [6, 7, 8];
+
 // POST /api/tournaments - admin-only: Turnier anlegen und alle Spieler sofort
 // auf die gewünschte Tischanzahl/-größe verteilen (Admin-Setup-Screen).
 export async function POST(request) {
@@ -22,8 +26,7 @@ export async function POST(request) {
 
   const body = await request.json();
   const name = body.name?.trim();
-  const tableCount = Number(body.tableCount);
-  const tableSize = Number(body.tableSize);
+  const tableSizes = Array.isArray(body.tableSizes) ? body.tableSizes.map(Number) : [];
   const playerNames = Array.isArray(body.playerNames)
     ? body.playerNames.map((n) => (typeof n === "string" ? n.trim() : "")).filter(Boolean)
     : [];
@@ -42,11 +45,11 @@ export async function POST(request) {
     : PHASES[2].tableSize;
 
   if (!name) return NextResponse.json({ error: "Turniername fehlt" }, { status: 400 });
-  if (!Number.isInteger(tableCount) || tableCount < 1) {
-    return NextResponse.json({ error: "Ungültige Tischanzahl" }, { status: 400 });
+  if (tableSizes.length === 0) {
+    return NextResponse.json({ error: "Mindestens ein Tisch nötig" }, { status: 400 });
   }
-  if (!validTableSize(tableSize)) {
-    return NextResponse.json({ error: "Tischgröße muss zwischen 2 und 10 liegen" }, { status: 400 });
+  if (!tableSizes.every((size) => VALID_VORRUNDE_SIZES.includes(size))) {
+    return NextResponse.json({ error: "Tischgröße muss 6, 7 oder 8 sein" }, { status: 400 });
   }
   if (!Number.isInteger(halbfinaleTableCount) || halbfinaleTableCount < 1) {
     return NextResponse.json({ error: "Ungültige Halbfinale-Tischanzahl" }, { status: 400 });
@@ -60,11 +63,9 @@ export async function POST(request) {
   if (playerNames.length === 0) {
     return NextResponse.json({ error: "Mindestens ein Spieler nötig (der erste ist die Bank)" }, { status: 400 });
   }
-  if (playerNames.length > tableCount * tableSize) {
-    return NextResponse.json(
-      { error: `${playerNames.length} Spieler passen nicht auf ${tableCount * tableSize} Plätze` },
-      { status: 400 }
-    );
+  const capacity = tableSizes.reduce((sum, size) => sum + size, 0);
+  if (playerNames.length > capacity) {
+    return NextResponse.json({ error: `${playerNames.length} Spieler passen nicht auf ${capacity} Plätze` }, { status: 400 });
   }
 
   const baseline = Number.isInteger(Number(body.baseline)) ? Number(body.baseline) : DEFAULT_BASELINE;
@@ -82,7 +83,7 @@ export async function POST(request) {
     : DEFAULT_SMALL_TABLE_ALERT_COUNT;
 
   const phasePlans = [
-    { targetTables: tableCount, tableSize },
+    { targetTables: tableSizes.length, tableSizes },
     { targetTables: halbfinaleTableCount, tableSize: halbfinaleTableSize },
     { targetTables: 1, tableSize: finaleTableSize },
   ];
@@ -90,8 +91,7 @@ export async function POST(request) {
   try {
     const result = await createTournament({
       name,
-      tableCount,
-      tableSize,
+      tableSizes,
       playerNames,
       baseline,
       dissolveThreshold,

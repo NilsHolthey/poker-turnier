@@ -31,6 +31,10 @@ export default function TableCapsule({
 }) {
   const positions = SEAT_POSITIONS[table.maxSeats];
   const ordinal = tableOrdinalFromLabel(table.label);
+  // docs/table-size-kickoff-prompt.md, §2: SEAT_POSITIONS kennt nach dem
+  // Hinzufügen von "7" jetzt 6/7/8, trotzdem kein Crash, falls maxSeats
+  // später doch mal eine andere Größe durchrutscht (gleicher Fallback-
+  // Gedanke wie MiniTable.js, das diese Lücke schon vorher abgefangen hat).
   const seats = Array.from({ length: table.maxSeats }, (_, seatIndex) => {
     const player = players.find(
       (p) => seatOf(p.num, table.maxSeats) === seatIndex,
@@ -150,6 +154,35 @@ export default function TableCapsule({
       Promise.resolve(onReseatPlayer(player._id, hoverSeatIndex)),
       new Promise((resolve) => setTimeout(resolve, SETTLE_MS)),
     ]).then(() => setDrag(null));
+  }
+
+  // Fallback für Tischgrößen ohne definiertes Sitzplatz-Layout (SEAT_POSITIONS
+  // kennt nur 6/7/8, docs/table-size-kickoff-prompt.md §2) - EARLY RETURN mit
+  // eigenem, komplett separatem JSX-Baum statt einer Ternary/eines if-Blocks
+  // INNERHALB des normalen Returns: eslint(react-hooks/refs) stuft
+  // handleDragPointerDown (liest capsuleRef.current) sonst fälschlich als
+  // "während des Renders gelesen" ein, sobald der seats.map()-Aufruf, der
+  // diese Funktion referenziert, selbst in einem neuen Conditional steckt.
+  // Einfache Liste statt Filz-Grafik, kein Drag&Drop ohne Koordinatensystem
+  // (gleicher Gedanke wie MiniTable.js' fallbackList).
+  if (!positions) {
+    return (
+      <div className={styles.wrapper}>
+        <div
+          className={styles.capsule}
+          style={{ backgroundColor: `${table.color}2e`, borderColor: table.color }}
+        >
+          <ul className={styles.fallbackList}>
+            {players.map((p) => (
+              <li key={p._id}>
+                {p.num} · {shortName(p.name)}
+                {p.isBank && <span className={seatStyles.bankWord}>Bank $</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
   }
 
   return (

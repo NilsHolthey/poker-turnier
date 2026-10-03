@@ -118,6 +118,24 @@
   color: var(--gold);
 }
 
+/* Neutral statt danger-rot (anders als .mergeButton) - Kapazität anpassen
+   ist ein Routine-Vorgang, kein destruktiver Eingriff in die Sitzordnung. */
+.removeSeatButton {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.removeSeatButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .mergeButton {
   padding: 12px;
   border-radius: 12px;
