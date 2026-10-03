@@ -155,7 +155,7 @@
 .rightColumn {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   min-width: 0;
   min-height: 0;
 }
@@ -165,7 +165,7 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
-  padding: 16px;
+  padding: 10px;
   border-radius: 16px;
   /* Dunkler statt nur eines leichten weißen Glas-Schimmers (Chat-Wunsch:
      "make the background darker ... currently hard to read", zuerst für die
@@ -213,7 +213,7 @@
 
 .statsPanel {
   flex: 1;
-  min-height: 300px;
+  min-height: 200px;
   justify-content: center;
 }
 
@@ -228,7 +228,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 0 16px;
+  padding: 4px 0 0 0px;
 }
 
 .bigStatValue {
@@ -376,7 +376,7 @@
    unten befüllt wird und erst dann in die zweite Spalte umbricht, wie bei
    einer Zeitungsspalte. */
 .playerList {
-  padding-top: 5px;
+  padding-top: 2px;
   flex: 1;
   column-count: 2;
   column-gap: 4px;
@@ -387,10 +387,10 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 5px;
+  padding: 3px;
   margin-bottom: 2px;
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   /* Verhindert, dass eine Zeile mitten im Spaltenumbruch auseinandergerissen wird. */
   break-inside: avoid;
   /* Sanfter Übergang statt hartem Sprung, wenn eine Zeile von aktiv auf
