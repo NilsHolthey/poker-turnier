@@ -471,21 +471,50 @@ export default function DashboardBoard({ tournamentId, initialState }) {
             {!schedule ? (
               <p className={styles.empty}>Noch keine Blindstruktur hinterlegt.</p>
             ) : (
-              <div className={styles.blindList}>
-                {schedule.levels.map((level, i) => (
-                  <div
-                    key={i}
-                    className={`${styles.blindRow} ${i === effective.effectiveIndex ? styles.blindRowCurrent : ""}`}
-                  >
-                    <span className={styles.blindIndex}>{i + 1}</span>
-                    <span className={styles.blindLevelValue}>{formatBlindLevel(level)}</span>
-                    <span className={styles.blindMeta}>
-                      <span className={styles.blindDuration}>{level.durationMinutes}m</span>
-                      <span className={styles.blindTime}>{levelStartTimes[i]}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
+              // Echte <table> statt Grid-Zeilen (Chat-Wunsch: "make it a
+              // propper table so everything is aligned") - in einer Spalte
+              // bekommen alle Zellen dieselbe Breite, dadurch stehen
+              // Level-Wert/Dauer/Uhrzeit in jeder Zeile exakt untereinander,
+              // unabhängig vom jeweiligen Textinhalt (gleiches Prinzip wie
+              // bei der Sitzplan-Druckansicht, app/players/print/page.js).
+              <table className={styles.blindList}>
+                <tbody>
+                  {schedule.levels.map((level, i) => {
+                    // Chat-Wunsch: "break is highlighted in one color, rebuy
+                    // phase should be greenish background so we can see
+                    // directly from the blindes which phase" - Rebuy gilt nur
+                    // mit gesetztem automatischem Ende (rebuyEndLevelIndex);
+                    // ohne das lässt sich pro Level nicht sagen, ob Rebuy dort
+                    // noch laufen würde (nur der manuelle Schalter zählt dann).
+                    const isRebuyLevel =
+                      !!tournament.config.rebuyPhaseActive &&
+                      schedule.rebuyEndLevelIndex != null &&
+                      i < schedule.rebuyEndLevelIndex;
+                    return (
+                      <tr
+                        key={i}
+                        // Chat-Wunsch: "for the rest ... like on players list
+                        // that every nth cell is different" - gleiches
+                        // Streifen-Muster wie .playerRow:nth-child(odd), hier
+                        // aber als eigene Klasse statt :nth-child, damit die
+                        // Cascade-Reihenfolge in der CSS-Datei (nicht die
+                        // DOM-Position) entscheidet, wer bei Kombination mit
+                        // Rebuy/Pause/aktuellem Level gewinnt.
+                        className={`${styles.blindRow} ${i % 2 === 1 ? styles.blindRowAlt : ""} ${
+                          isRebuyLevel ? styles.blindRowRebuy : ""
+                        } ${level.isBreak ? styles.blindRowBreak : ""} ${
+                          i === effective.effectiveIndex ? styles.blindRowCurrent : ""
+                        }`}
+                      >
+                        <td className={styles.blindIndex}>{i + 1}</td>
+                        <td className={styles.blindLevelValue}>{formatBlindLevel(level)}</td>
+                        <td className={styles.blindDuration}>{level.durationMinutes}m</td>
+                        <td className={styles.blindTime}>{levelStartTimes[i]}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </section>
 
