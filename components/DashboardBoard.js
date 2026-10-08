@@ -23,6 +23,12 @@ import styles from "./DashboardBoard.module.css";
 // die Meldung auch bei laufendem Ticker-Text wirklich gelesen werden kann.
 const BUST_TICKER_MS = 60000;
 
+// Chat-Wunsch: "push notifications for blind level increase and for start
+// of tournament ... also display both in the dashboard news ticker" -
+// gleiches Zeitfenster wie bei Busts, damit die Meldung lange genug steht,
+// um beim langsam laufenden Ticker-Text wirklich gelesen zu werden.
+const BLIND_LEVEL_TICKER_MS = 60000;
+
 // Schneller als das normale 8s-Polling im Live-Board (TournamentBoard.js) -
 // hier sitzt niemand, der einen Fehler manuell korrigieren könnte, das
 // Dashboard soll einfach zügig nachziehen. Bewusst Polling statt Push (Chat:
@@ -311,6 +317,25 @@ export default function DashboardBoard({ tournamentId, initialState }) {
     tickerMessages.push("Turnier noch nicht gestartet - noch keine Blindstruktur hinterlegt");
   } else if (effective && !effective.started) {
     tickerMessages.push(`Turnier noch nicht gestartet - startet um ${schedule.startTime} Uhr`);
+  } else if (effective?.started && schedule?.currentLevelStartedAt) {
+    // Chat-Wunsch: "push notifications for blind level increase and for
+    // start of tournament ... also display both in the dashboard news
+    // ticker" - gleiche Unterscheidung wie checkBlindLevelNotification()
+    // server-seitig (lib/db/tournamentEngine.js): "Turnier gestartet" nur
+    // beim allerersten Level (firstStartedAt === currentLevelStartedAt),
+    // sonst "Blind-Level erhöht".
+    const levelStartedMs = new Date(schedule.currentLevelStartedAt).getTime();
+    if (now - levelStartedMs < BLIND_LEVEL_TICKER_MS) {
+      const isTournamentStart =
+        effective.effectiveIndex === 0 &&
+        schedule.firstStartedAt &&
+        new Date(schedule.firstStartedAt).getTime() === levelStartedMs;
+      tickerMessages.push(
+        isTournamentStart
+          ? `Turnier gestartet! Level 1: ${formatBlindLevel(effective.level)}`
+          : `Blind-Level erhöht: Level ${effective.effectiveIndex + 1} - ${formatBlindLevel(effective.level)}`
+      );
+    }
   }
   // Chat-Wunsch: "last bust plus sentence should stay ... it should not
   // jump back to only the players fighting" - bustedPlayers/recentBusts wie
