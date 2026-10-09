@@ -41,6 +41,22 @@ export default function PushToggle() {
       const sub = await registration.pushManager.getSubscription();
       setSupported(true);
       setSubscribed(!!sub);
+      // Bugreport: Tisch4-Operator bekam Pushes, die eigentlich für Tisch5
+      // bestimmt waren - die Browser-Subscription ist geräte-/browser-
+      // gebunden, nicht an die aktuell eingeloggte Session. subscribePush()
+      // lief bisher NUR beim manuellen Einschalten über den Glocken-Button
+      // (siehe handleToggle unten), nie erneut beim Seitenaufruf - meldete
+      // sich also jemand auf einem Gerät um, auf dem Push schon für einen
+      // ANDEREN Nickname aktiviert war, blieb der alte Nickname-Eintrag in
+      // pushSubscriptions stehen, ohne dass die UI das sichtbar gemacht hätte
+      // (die Glocke zeigte ja weiterhin korrekt "an"). Jetzt wird bei jedem
+      // Mount mit bereits bestehender Subscription der Server-Eintrag auf den
+      // aktuell eingeloggten Nickname nachgezogen (subscribePush() macht ein
+      // upsert auf den endpoint, also idempotent und ohne Seiteneffekt, falls
+      // der Nickname ohnehin schon stimmt).
+      if (sub) {
+        await subscribePush(JSON.parse(JSON.stringify(sub))).catch(() => {});
+      }
     }
     syncSubscriptionState().catch(() => {});
   }, []);
