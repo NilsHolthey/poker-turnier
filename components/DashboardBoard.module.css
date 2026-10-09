@@ -173,8 +173,12 @@
      rgba-Werte allein waren schon fast durchsichtig - "dunkler" heißt hier
      nicht "noch weniger Weiß" (kaum sichtbarer Unterschied), sondern eine
      eigene dunkle Grundfläche zusätzlich zum Schimmer, damit der helle Text
-     wirklich Kontrast bekommt. */
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), rgba(0, 0, 0, 0.35);
+     wirklich Kontrast bekommt.
+     Chat-Wunsch (später): "background color can be lighter so more
+     translucent" - schwarze Grundfläche von 0.35 auf 0.18 reduziert, damit
+     das Hintergrundbild wieder leichter durchscheint, ohne den Kontrast-Fix
+     oben komplett zurückzudrehen. */
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.07);
   transition: border-color 1s ease;
 }
@@ -190,7 +194,7 @@
 .pageFinale .panel {
   border-color: rgba(163, 133, 96, 0.6);
   background: radial-gradient(ellipse 120% 80% at 50% 0%, rgba(163, 133, 96, 0.06), transparent 70%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), rgba(0, 0, 0, 0.35);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), rgba(0, 0, 0, 0.18);
 }
 
 /* Proportionale flex-Anteile statt fester vh-Werte (Chat: "we need to work
@@ -292,14 +296,17 @@
   color: var(--danger);
 }
 
+/* Chat-Wunsch: "give it a title" - war zuvor display:none (0.2rem griff
+   dadurch nie), jetzt sichtbar für alle .panel-Titel (Spieler-Liste UND
+   Blindstruktur), gleiche Optik wie die Section-Titel in AdminBoard.module.css. */
 .panelTitle {
-  font-size: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
   border-left: 2px solid var(--accent);
   padding-left: 8px;
-  display: none;
 }
 
 .empty {
@@ -310,63 +317,135 @@
 /* Feste rem-Werte statt clamp(cqh) (Chat: "work on blindlevels font size and
    padding make it smaller but not as small as on playerlist") - passend zur
    Vereinfachung, die schon bei .playerRow gemacht wurde (eine feste
-   Zielgröße statt einer sich selbst einpassenden Berechnung), nur mit
-   spürbar größeren Werten als dort (0.68rem vs. 0.5rem), weil hier weniger
-   Zeilen (Level) auf einmal reinmüssen als Spieler in der Liste. */
+   Zielgröße statt einer sich selbst einpassenden Berechnung).
+   Chat-Wunsch: "increase the blind fontsizes except for duration ... ca 35%
+   whitespace at the bottom with 11 levels" - größere Schrift UND größeres
+   Zeilen-Padding füllen die Spalte jetzt deutlich voller, ohne dass bei der
+   üblichen Levelanzahl (ca. 10-12) ein eigener Scrollbereich nötig wird. */
+/* Echte <table> statt Grid-Zeilen (Chat-Wunsch: "make it a propper table so
+   everything is aligned") - Spalten bekommen dadurch automatisch pro Tabelle
+   eine einheitliche Breite, Level-Wert/Dauer/Uhrzeit stehen in jeder Zeile
+   exakt untereinander statt je nach Textlänge zu wandern. */
+/* Chat-Wunsch: "one row should look like one cell and we need a gap between
+   them" - border-collapse: separate + border-spacing (0 horizontal, 6px
+   vertikal) trennt NUR die Zeilen voneinander, nicht die Spalten innerhalb
+   einer Zeile (die bleiben flush aneinander, siehe :first-child/:last-child
+   Radius unten statt Radius auf JEDER Zelle - das hätte die Zeile optisch in
+   4 einzelne Kästchen statt einer durchgehenden Fläche zerschnitten). */
 .blindList {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
   overflow-y: auto;
 }
 
 .blindRow {
-  display: grid;
-  grid-template-columns: 20px 1fr auto;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 6px;
-  border-radius: 8px;
-  font-size: 0.68rem;
+  font-size: 1.25rem;
   color: var(--text-muted);
   /* Sanfter Wechsel, wenn das aktuelle Level weiterspringt, statt eines
      harten Umschaltens von einer Zeile auf die nächste. */
   transition: background-color 0.4s ease, color 0.4s ease;
 }
 
+.blindRow td {
+  padding: 4px 7px;
+}
+
+.blindRow td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.blindRow td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Chat-Wunsch: "for the rest we should make it like on players list that
+   every nth cell is different" - gleiches Streifen-Muster wie
+   .playerRow:nth-child(odd) oben. Steht bewusst VOR Rebuy/Pause/aktuellem
+   Level in der Cascade, damit diese bei Kombination (gleiche Spezifität,
+   spätere Regel gewinnt) den Streifen überschreiben, statt sich mit ihm zu
+   einer unklaren Mischfarbe zu addieren. */
+.blindRowAlt {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Chat-Wunsch: "rebuy and break will only have a border left as indicator"
+   (statt der vorherigen vollflächigen Einfärbung) - so bleibt der
+   Streifen-Hintergrund (.blindRowAlt) auch auf Rebuy-/Pause-Zeilen sichtbar,
+   nur der linke Rand zeigt die Phase an. Chat-Wunsch: "use the red from
+   table 3 and green from table 1" - TABLE_COLORS[0]/[2] (lib/constants.js,
+   Tisch 1/Tisch 3) statt eigener Grün-/Rot-Variante, damit die Blindliste
+   dieselbe Farbsprache wie die Tische nutzt. */
+.blindRowRebuy td:first-child {
+  border-left: 3px solid #3e6b58;
+}
+
+/* Chat-Wunsch: "the break is highlighted in one color" - siehe Kommentar
+   oben, Farbe von TABLE_COLORS[2] (Tisch 3). */
+.blindRowBreak td:first-child {
+  border-left: 3px solid #8a4a5b;
+}
+
+/* Steht in der Cascade nach .blindRowRebuy/.blindRowBreak, gewinnt bei
+   Kombination also bewusst (das aktuelle Level ist die wichtigste Info in
+   der Liste). */
 .blindRowCurrent {
-  background: rgb(var(--accent-rgb) / 0.14);
+  background: rgb(var(--accent-rgb) / 0.2);
   color: var(--text);
   font-weight: 700;
 }
 
+/* Chat-Wunsch: "the active one should have a colored border" - Rahmen statt
+   nur Hintergrundfläche, damit das aktuelle Level auch neben einer
+   Rebuy-/Pause-Einfärbung klar erkennbar bleibt. Top/Bottom auf jeder Zelle
+   (border-collapse: separate erlaubt das jetzt verzerrungsfrei), Links/Rechts
+   nur am jeweils äußeren Rand der Zeile, damit es wie EIN Rahmen um die ganze
+   Zeile wirkt statt um jede einzelne Zelle. */
+.blindRowCurrent td {
+  border-top: 1.5px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent);
+}
+
+.blindRowCurrent td:first-child {
+  border-left: 1.5px solid var(--accent);
+}
+
+.blindRowCurrent td:last-child {
+  border-right: 1.5px solid var(--accent);
+}
+
 .blindIndex {
+  width: 34px;
+  text-align: left;
   font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 .blindLevelValue {
+  width: 100%;
+  text-align: left;
   font-variant-numeric: tabular-nums;
 }
 
-/* Dauer + Uhrzeit gestapelt statt nur Dauer (Chat: "list should not only
-   carry duration also time") - Uhrzeit kommt aus computeLevelStartTimes()
-   (lib/core/blindSchedule.js), schedule.startTime + aufsummierte Dauer der
-   vorherigen Level. */
-.blindMeta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.3;
-}
-
+/* Einzige Ausnahme von der generellen Schriftvergrößerung oben (Chat-Wunsch:
+   "increase ... except for the duration") - bewusst klein und gedämpft
+   gehalten, damit Level-Wert/Uhrzeit die auffälligeren Infos bleiben. Jetzt
+   in einer Zeile mit Level-Wert/Uhrzeit statt darüber gestapelt (Chat:
+   "level value duration time should all be in one line"). */
 .blindDuration {
-  font-size: 1rem;
+  text-align: right;
+  white-space: nowrap;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
 .blindTime {
-  font-size: 0.8rem;
+  text-align: right;
+  white-space: nowrap;
+  font-size: 1.1rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -376,7 +455,7 @@
    unten befüllt wird und erst dann in die zweite Spalte umbricht, wie bei
    einer Zeitungsspalte. */
 .playerList {
-  padding-top: 2px;
+  padding-top: 5px;
   flex: 1;
   column-count: 2;
   column-gap: 4px;
@@ -387,10 +466,10 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 3px;
+  padding: 6px;
   margin-bottom: 2px;
   border-radius: 8px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   /* Verhindert, dass eine Zeile mitten im Spaltenumbruch auseinandergerissen wird. */
   break-inside: avoid;
   /* Sanfter Übergang statt hartem Sprung, wenn eine Zeile von aktiv auf

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db/mongodb";
 import { requireRole } from "@/lib/authz";
+import { checkBlindLevelNotification } from "@/lib/db/tournamentEngine";
 
 // GET /api/tournaments/:tournamentId/dashboard-state - eigenes Read-Model nur
 // fürs TV-Dashboard (Chat-Wunsch: "do not remove the table when it's deleted
@@ -19,6 +20,13 @@ export async function GET(request, { params }) {
 
   const db = await getDb();
   const tId = new ObjectId(tournamentId);
+  // Chat-Wunsch: "push notifications for blind level increase and for start
+  // of tournament" - kein Server-Cron verfügbar, daher an den Poll des
+  // TV-Dashboards angehängt (siehe checkBlindLevelNotification,
+  // lib/db/tournamentEngine.js). Das Dashboard läuft typischerweise
+  // durchgängig, ist also ein zuverlässiger zweiter "Entdecker" neben den
+  // Tisch-Polls in .../state.
+  await checkBlindLevelNotification(tId);
   const tournament = await db.collection("tournaments").findOne({ _id: tId });
   if (!tournament) {
     return NextResponse.json({ error: "Turnier nicht gefunden" }, { status: 404 });
