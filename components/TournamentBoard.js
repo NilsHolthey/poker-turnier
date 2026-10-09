@@ -101,6 +101,19 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   // - niemand kann das manuell ändern.
   const myTableId = user?.myTableId ?? null;
   const [manageTableId, setManageTableId] = useState(null);
+  // Chat-Wunsch: "add a modal to the receiving table new player at
+  // position/seat number on your table, that pops up only with confirm" -
+  // erkennt neue Spieler am EIGENEN Tisch rein über einen ID-Diff zwischen
+  // zwei state.players-Ständen (kein eigener Server-Event-Kanal nötig, läuft
+  // über denselben Poll/reload()-Mechanismus, der ohnehin schon alle 8s
+  // läuft). Nur für Operatoren relevant - myTableId ist bei admin immer
+  // null, admin hat keinen "eigenen" Tisch, der überraschen könnte.
+  const [newPlayerAlert, setNewPlayerAlert] = useState(null);
+  const knownMyTablePlayerIdsRef = useRef(null);
+  // IDs, die der Operator gerade selbst über "Spieler hinzufügen" angelegt
+  // hat (confirmAddPlayer/handleManageAdd unten) - die sollen NICHT nochmal
+  // als "neuer Spieler" gemeldet werden, der Operator weiß ja bereits davon.
+  const selfAddedPlayerIdsRef = useRef(new Set());
   // Admin-ausgelöstes manuelles Auflösen/Zusammenlegen eines Tisches
   // (Chat-Wunsch: "we kind of need the possibility to merge tables") - Button
   // sitzt in ManageTableSheet, Bestätigung hier wie bei den übrigen
@@ -172,6 +185,41 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     }, 8000);
     return () => clearInterval(interval);
   }, [tournamentId]);
+
+  // Siehe newPlayerAlert-Kommentar oben: läuft bei jedem state.players-Wechsel
+  // (egal ob durch den 8s-Poll oder eine eigene Aktion ausgelöst). Erster
+  // Durchlauf merkt nur den Ausgangsstand (kein Alarm beim Seitenaufruf für
+  // Spieler, die schon vorher da saßen).
+  // await Promise.resolve() vor dem setState (gleiche Konvention wie in
+  // PushToggle.js) - der react-hooks/set-state-in-effect-Lint verlangt eine
+  // asynchrone Fortsetzung statt eines synchronen setState()-Aufrufs direkt
+  // im Effekt-Body.
+  useEffect(() => {
+    if (!myTableId) return;
+    async function detectNewArrivals() {
+      const currentIds = new Set(state.players.filter((p) => p.tableId === myTableId).map((p) => p._id));
+      const known = knownMyTablePlayerIdsRef.current;
+      if (known === null) {
+        knownMyTablePlayerIdsRef.current = currentIds;
+        return;
+      }
+      const arrived = [];
+      for (const p of state.players) {
+        if (p.tableId !== myTableId || known.has(p._id)) continue;
+        if (selfAddedPlayerIdsRef.current.has(p._id)) {
+          selfAddedPlayerIdsRef.current.delete(p._id);
+          continue;
+        }
+        arrived.push(p);
+      }
+      knownMyTablePlayerIdsRef.current = currentIds;
+      if (arrived.length > 0) {
+        await Promise.resolve();
+        setNewPlayerAlert(arrived);
+      }
+    }
+    detectNewArrivals();
+  }, [state.players, myTableId]);
 
   function startDraw(action) {
     setRejectedIds([]);
@@ -298,7 +346,8 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
     if (!prompt) return;
     setAddPlayerPrompt(null);
     runAction(async () => {
-      await addPlayer(tournamentId, { tableId: prompt.tableId, seatIndex: prompt.seatIndex, name });
+      const { player } = await addPlayer(tournamentId, { tableId: prompt.tableId, seatIndex: prompt.seatIndex, name });
+      selfAddedPlayerIdsRef.current.add(player._id);
       await reload();
     });
   }
@@ -317,7 +366,8 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
   function handleManageAdd(name) {
     if (!manageTableId) return;
     runAction(async () => {
-      await addPlayer(tournamentId, { tableId: manageTableId, name });
+      const { player } = await addPlayer(tournamentId, { tableId: manageTableId, name });
+      selfAddedPlayerIdsRef.current.add(player._id);
       await reload();
     });
   }
@@ -753,6 +803,22 @@ export default function TournamentBoard({ tournamentId, initialState, user }) {
           confirmLabel="Entfernen"
           onConfirm={confirmRemoveSeatAction}
           onCancel={() => setConfirmRemoveSeat(false)}
+        />
+      )}
+
+      {/* Chat-Wunsch: "add a modal to the receiving table new player at
+          position/seat number on your table, that pops up only with
+          confirm" - reine Kenntnisnahme (hideCancel), kein Abbrechen. */}
+      {newPlayerAlert && (
+        <ConfirmDialog
+          message={
+            newPlayerAlert.length === 1
+              ? `Neuer Spieler an deinem Tisch: Platz ${newPlayerAlert[0].num} - ${newPlayerAlert[0].name}`
+              : `Neue Spieler an deinem Tisch: ${newPlayerAlert.map((p) => `Platz ${p.num} - ${p.name}`).join(", ")}`
+          }
+          confirmLabel="Bestätigen"
+          hideCancel
+          onConfirm={() => setNewPlayerAlert(null)}
         />
       )}
 
