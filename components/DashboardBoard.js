@@ -14,6 +14,7 @@ import {
 } from "@/lib/core";
 import { PHASES } from "@/lib/constants";
 import { shortName } from "@/lib/client/formatName";
+import { playBustSound } from "@/lib/client/sound";
 import { pickTauntSentence } from "@/lib/client/tauntSentences";
 import styles from "./DashboardBoard.module.css";
 
@@ -247,6 +248,21 @@ export default function DashboardBoard({ tournamentId, initialState }) {
   }, []);
 
   const { tournament, tables, players } = state;
+
+  // Chat-Wunsch: "play a sound if a player busts" - ID-Diff gegen den
+  // zuletzt bekannten Stand (gleiches Muster wie der "neuer Spieler"-Modal in
+  // TournamentBoard.js), kein eigener Server-Event-Kanal nötig. Erster
+  // Durchlauf merkt nur den Ausgangsstand (kein Ton beim Seitenaufruf für
+  // Spieler, die schon vorher gebustet waren).
+  const knownBustedIdsRef = useRef(null);
+  useEffect(() => {
+    const bustedIds = new Set(players.filter((p) => p.status !== "active").map((p) => p._id));
+    const known = knownBustedIdsRef.current;
+    knownBustedIdsRef.current = bustedIds;
+    if (known === null) return;
+    const hasNewBust = players.some((p) => p.status !== "active" && !known.has(p._id));
+    if (hasNewBust) playBustSound();
+  }, [players]);
   const schedule = tournament.blindSchedule;
   const effective = schedule ? computeEffectiveBlindState(schedule, now) : null;
   const levelStartTimes = schedule ? computeLevelStartTimes(schedule) : [];
